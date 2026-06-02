@@ -1,0 +1,45 @@
+services:
+  # 1. PostgreSQL Veritabanı Servisi
+  - type: pserv
+    name: smd-db
+    env: image
+    plan: free
+    image: postgres:15
+    disk:
+      name: smd-db-data
+      mountPath: /var/lib/postgresql/data
+      sizeGB: 1
+    envVars:
+      - key: POSTGRES_USER
+        value: smd_user
+      - key: POSTGRES_DB
+        value: smd_db
+      - key: POSTGRES_PASSWORD
+        generateValue: true
+
+  # 2. FastAPI Backend Servisi
+  - type: web
+    name: smd-backend
+    env: python
+    region: frankfurt
+    plan: free
+    buildCommand: "cd backend && pip install -r requirements.txt"
+    startCommand: "cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DATABASE_URL
+        fromService:
+          type: pserv
+          name: smd-db
+          envVarKey: POSTGRES_URL
+      - key: DEBUG
+        value: "False"
+      # Aşağıdaki secret'ları Render Dashboard'dan manuel girmelisiniz:
+      # - ADMIN_USERNAME
+      # - ADMIN_PASSWORD
+      # - JWT_SECRET
+      # - MINIO_ACCESS_KEY
+      # - MINIO_SECRET_KEY
+      # - FRONTEND_URL
+      # - BACKEND_URL
