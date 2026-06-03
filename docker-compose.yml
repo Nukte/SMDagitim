@@ -1,9 +1,26 @@
 version: '3.8'
 
 services:
+  db:
+    image: postgres:15-alpine
+    container_name: smd-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: smd_user
+      POSTGRES_PASSWORD: smd_password
+      POSTGRES_DB: smd_db
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smd_user -d smd_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   minio:
     image: minio/minio
     container_name: smd-minio
+    restart: unless-stopped
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -13,7 +30,45 @@ services:
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: smd-backend
     restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://smd_user:smd_password@db:5432/smd_db
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      # JWT Ayarları -> Bunları sunucunuzda, coolify üzerinden overwrite etmenizi öneririz
+      - JWT_SECRET=change_me_in_production_really
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=secret123
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_started
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: smd-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
 
 volumes:
+  pg_data:
   minio_data:
+
