@@ -90,7 +90,7 @@ const currentTime = computed(() => {
 .tw-preview { overflow: hidden; }
 
 .tw-frame {
-  background: var(--bg-secondary);
+  background: #FFFFFF;
   border-radius: var(--radius-lg);
   overflow: hidden;
   padding: var(--space-4);
@@ -181,7 +181,7 @@ const currentTime = computed(() => {
   border-radius: var(--radius-lg);
   overflow: hidden;
   aspect-ratio: 16/9;
-  background: var(--bg-tertiary);
+  background: var(--bg-input);
   margin-bottom: var(--space-3);
 }
 

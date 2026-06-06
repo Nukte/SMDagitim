@@ -76,7 +76,7 @@ const displayText = computed(() => {
 .fb-preview { overflow: hidden; }
 
 .fb-frame {
-  background: var(--bg-secondary);
+  background: #FFFFFF;
   border-radius: var(--radius-lg);
   overflow: hidden;
 }
@@ -142,7 +142,7 @@ const displayText = computed(() => {
 
 .fb-media {
   aspect-ratio: 16/9;
-  background: var(--bg-tertiary);
+  background: var(--bg-input);
 }
 
 .fb-media-img {

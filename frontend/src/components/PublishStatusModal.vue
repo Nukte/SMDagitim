@@ -2,24 +2,17 @@
   <div>
     <div class="modal-backdrop" @click="$emit('close')"></div>
 
-    <div class="modal glass-card publish-modal">
-      <!-- Jade top line -->
-      <div class="modal-top-line"></div>
-
+    <div class="modal publish-modal">
       <!-- Header -->
-      <div class="modal-head">
+      <div class="modal-header">
         <div class="modal-title-wrap">
           <span class="modal-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/>
-            </svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg>
           </span>
           <h3 class="modal-title">Paylaşım Durumu</h3>
         </div>
-        <button class="btn btn-icon" @click="$emit('close')">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M18 6L6 18M6 6l12 12"/>
-          </svg>
+        <button class="btn-icon close-btn" @click="$emit('close')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
         </button>
       </div>
 
@@ -35,14 +28,10 @@
           <div class="row-indicator">
             <span v-if="p.status === 'pending' || p.status === 'publishing'" class="spinner spinner-sm"></span>
             <span v-else-if="p.status === 'success'" class="row-icon success-icon">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                <polyline points="20 6 9 17 4 12"/>
-              </svg>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
             </span>
             <span v-else class="row-icon error-icon">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                <path d="M18 6L6 18M6 6l12 12"/>
-              </svg>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6L6 18M6 6l12 12"/></svg>
             </span>
           </div>
 
@@ -56,16 +45,13 @@
           <!-- Link -->
           <a v-if="p.post_url" :href="p.post_url" target="_blank" class="row-link">
             Görüntüle
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-              <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-            </svg>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           </a>
         </div>
       </div>
 
       <!-- Footer -->
-      <div v-if="allDone" class="modal-foot">
+      <div v-if="allDone" class="modal-footer">
         <div class="all-done-msg" v-if="allSuccess">
           <span class="done-dot"></span>
           Tüm paylaşımlar tamamlandı!
@@ -110,25 +96,8 @@ function statusText(s)    { return STATUS_TEXT[s] || s }
 </script>
 
 <style scoped>
-/* ── Modal overrides ── */
 .publish-modal {
-  padding: 0;
-  border-radius: var(--radius-xl);
-  overflow: hidden;
-}
-
-.modal-top-line {
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--accent), var(--accent-dim), transparent);
-}
-
-/* ── Head ── */
-.modal-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-5) var(--space-6);
-  border-bottom: 1px solid var(--border);
+  max-width: 480px;
 }
 
 .modal-title-wrap {
@@ -138,56 +107,78 @@ function statusText(s)    { return STATUS_TEXT[s] || s }
 }
 
 .modal-icon {
-  width: 30px; height: 30px;
-  border-radius: var(--radius-sm);
-  background: var(--accent-subtle);
-  border: 1px solid var(--border-accent);
-  display: flex; align-items: center; justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  background: var(--accent-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--accent);
 }
 
-.modal-title {
-  font-size: var(--font-size-base);
-  font-weight: 700;
-  letter-spacing: -0.01em;
+.close-btn {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
 }
 
-/* ── Body ── */
-.modal-body {
-  padding: var(--space-4) var(--space-6);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+.close-btn:hover {
+  background: var(--bg-input);
+  color: var(--text-primary);
 }
 
-/* ── Row ── */
+/* Platform Row */
 .platform-row {
   display: flex;
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
-  background: var(--bg-input);
+  background: var(--bg-body);
   border: 1px solid var(--border);
   transition: all var(--transition-fast);
 }
 
-.platform-row.success { border-color: rgba(0, 229, 160, 0.2); background: rgba(0,229,160,0.04); }
-.platform-row.error   { border-color: rgba(255, 92, 92, 0.2);  background: rgba(255,92,92,0.04); }
+.platform-row + .platform-row {
+  margin-top: var(--space-2);
+}
 
-/* ── Indicator ── */
-.row-indicator { width: 22px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.platform-row.success {
+  border-color: var(--success-border);
+  background: var(--success-bg);
+}
 
-.row-icon {
-  width: 20px; height: 20px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
+.platform-row.error {
+  border-color: var(--error-border);
+  background: var(--error-bg);
+}
+
+.row-indicator {
+  width: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
+
+.row-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 .success-icon { background: var(--success-bg); color: var(--success); }
 .error-icon   { background: var(--error-bg);   color: var(--error); }
 
-/* ── Info ── */
 .row-info {
   flex: 1;
   display: flex;
@@ -199,12 +190,14 @@ function statusText(s)    { return STATUS_TEXT[s] || s }
 .row-platform {
   font-size: var(--font-size-sm);
   font-weight: 600;
+  color: var(--text-primary);
 }
 
 .row-status {
   font-size: var(--font-size-xs);
   color: var(--text-tertiary);
 }
+
 .s-publishing { color: var(--warning); }
 .s-success    { color: var(--success); font-weight: 600; }
 .s-error      { color: var(--error);   font-weight: 600; }
@@ -212,43 +205,32 @@ function statusText(s)    { return STATUS_TEXT[s] || s }
 .row-error {
   font-size: var(--font-size-xs);
   color: var(--error);
-  opacity: 0.75;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  opacity: 0.8;
 }
 
-/* ── Link ── */
 .row-link {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px var(--space-3);
+  padding: var(--space-1) var(--space-3);
   font-size: var(--font-size-xs);
   font-weight: 600;
   color: var(--accent);
-  background: var(--accent-subtle);
-  border: 1px solid var(--border-accent);
+  background: var(--accent-light);
+  border: 1px solid transparent;
   border-radius: var(--radius-full);
   text-decoration: none;
   white-space: nowrap;
   transition: all var(--transition-fast);
   flex-shrink: 0;
 }
+
 .row-link:hover {
-  background: rgba(0, 229, 160, 0.15);
-  color: var(--accent-hover);
+  background: var(--accent);
+  color: white;
 }
 
-/* ── Footer ── */
-.modal-foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-4) var(--space-6);
-  border-top: 1px solid var(--border);
-}
-
+/* Footer */
 .all-done-msg {
   display: flex;
   align-items: center;
@@ -259,10 +241,10 @@ function statusText(s)    { return STATUS_TEXT[s] || s }
 }
 
 .done-dot {
-  width: 7px; height: 7px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: var(--success);
-  box-shadow: 0 0 8px var(--success);
   animation: pulse 2s ease-in-out infinite;
 }
 </style>
