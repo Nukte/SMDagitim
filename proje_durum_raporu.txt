@@ -1,0 +1,26 @@
+SOSYAL MEDYA DAĞITIM PLATFORMU (SMD) — PROJE DURUM RAPORU
+
+Proje Özeti:
+SMD, markaların tek bir panel üzerinden birden fazla sosyal medya platformuna asenkron ve eşzamanlı olarak içerik dağıtmasını, yapay zeka desteğiyle marka kimliğine uygun içerikler üretmesini ve global hedef kitleler için otomatik çeviri yapmasını sağlayan merkezi bir yönetim platformudur.
+
+1. Tamamlanan Geliştirmeler ve Mevcut Özellikler
+
+Akıllı Çeviri ve Lokalizasyon
+- İçerik ve Etiket (Tag) Çevirisi: Paylaşılacak gönderi metinlerinin ve hashtag’lerin, hedef hesabın bölgesel diline göre otomatik olarak çevrilmesi özelliği entegre edilmiştir.
+
+Yapay Zeka Destekli İçerik Üretimi
+- Marka Kimliği Analizi: PDF, DOCX veya TXT formatındaki marka kimliği dokümanlarının yapay zeka tarafından taranarak; marka adı, tonu (tone of voice), hedef kitle ve anahtar kelimelerin otomatik olarak sisteme işlenmesi sağlanmıştır.
+- AI Post Oluşturucu: Analiz edilen marka kimliği verileri doğrultusunda, belirlenen konularda otomatik gönderi metni ve ilgili hashtag’lerin (AI Post & Tag Generator) üretilmesi sağlanmıştır.
+
+Dağıtım ve Yayınlama Altyapısı
+- Eşzamanlı Çoklu Gönderim: Tek bir panel üzerinden seçilen birden fazla sosyal medya hesabına (aynı veya farklı platformlar fark etmeksizin) eşzamanlı olarak gönderim yapma altyapısı kurulmuştur.
+- Platform Entegrasyonları: Meta (Instagram & Facebook), LinkedIn ve X (Twitter) platformlarına yönelik bağlantı altyapıları tamamlanmıştır.
+
+2. Yol Haritası ve Yakın Dönemde Yapılacaklar
+
+Meta (Instagram & Facebook) API Entegrasyonu ve Yapılandırma
+- Gereksinim: Instagram Graph API üzerinden içerik yayınlayabilmek için Instagram Business/Creator hesaplarının aktif bir Facebook Sayfasına (Page) ve Facebook İşletme Hesabına bağlı olması gerekmektedir.
+- Çözüm & Akış: Kullanıcıların hesaplarını platforma bağlama sürecini kolaylaştırmak adına "Facebook ile Giriş Yap" (Facebook Login) akışı entegre edilecektir. Kullanıcı Facebook ile giriş yaptığında, bu hesaba bağlı tüm yetkili Facebook sayfaları ve ilişkili Instagram Business hesapları otomatik olarak tespit edilip uygulamaya senkronize edilecektir.
+
+Canva API Entegrasyonu ile Tasarım Çevirisi Otomasyonu
+- Geliştirme: Paylaşılacak görsel ve tasarımların da dil bariyerine takılmaması için Canva API entegrasyonu yapılacaktır. Bu sayede, gönderi metninde yapılan otomatik çeviri işlemi görsel üzerindeki metinlere de uygulanarak tasarım çevirileri tamamen otomatik hale getirilecektir.

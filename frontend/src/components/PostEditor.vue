@@ -71,6 +71,9 @@ function removeHashtag(index) {
 <style scoped>
 .post-editor {
   padding: var(--space-5);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
 }
 
 .editor-title {
@@ -78,11 +81,27 @@ function removeHashtag(index) {
   font-weight: 600;
   color: var(--text-secondary);
   margin-bottom: var(--space-4);
+  letter-spacing: -0.01em;
 }
 
 .post-textarea {
   min-height: 150px;
   resize: vertical;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  padding: var(--space-3);
+  width: 100%;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.post-textarea:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--accent-light);
 }
 
 .char-counter {
@@ -92,21 +111,28 @@ function removeHashtag(index) {
   margin-top: var(--space-1);
 }
 
-.char-warning { color: var(--warning); }
-.char-danger { color: var(--error); font-weight: 600; }
+.char-warning {
+  color: var(--warning);
+  font-weight: 500;
+}
+
+.char-danger {
+  color: var(--error);
+  font-weight: 600;
+}
 
 /* ── Hashtags ── */
 .hashtag-input-wrapper {
-  background: var(--bg-input);
+  background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: var(--space-2);
-  transition: all var(--transition-fast);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .hashtag-input-wrapper:focus-within {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-subtle);
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--accent-light);
 }
 
 .hashtag-chips {
@@ -121,11 +147,11 @@ function removeHashtag(index) {
   align-items: center;
   gap: var(--space-1);
   padding: var(--space-1) var(--space-3);
-  background: var(--accent-subtle);
+  background: var(--accent-light);
   color: var(--accent);
   font-size: var(--font-size-xs);
   font-weight: 600;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
 }
 
 .chip-remove {
@@ -149,11 +175,13 @@ function removeHashtag(index) {
   padding: var(--space-1) var(--space-2);
   width: 100%;
   font-size: var(--font-size-sm);
+  color: var(--text-primary);
 }
 
 .hashtag-input:focus {
   box-shadow: none;
   border-color: transparent;
+  outline: none;
 }
 
 .hashtag-chips:empty + .hashtag-input {

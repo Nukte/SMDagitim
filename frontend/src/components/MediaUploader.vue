@@ -13,7 +13,13 @@
     >
       <template v-if="postStore.media.length === 0 && !isUploading">
         <div class="drop-zone-content">
-          <span class="drop-icon">📁</span>
+          <div class="drop-icon-wrapper">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+          </div>
           <p class="drop-text">Dosyaları sürükle & bırak veya tıkla</p>
           <p class="drop-hint">JPG, PNG, GIF, MP4, MOV • Maks 500MB</p>
         </div>
@@ -50,9 +56,15 @@
         <div class="media-thumb">
           <img v-if="item.media_type === 'image'" :src="item.localPreview || item.public_url" alt="" />
           <div v-else class="media-video-placeholder">
-            <span>🎬</span>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
           </div>
-          <button class="media-remove" @click="postStore.removeMedia(index)" title="Kaldır">✕</button>
+          <button class="media-remove" @click="postStore.removeMedia(index)" title="Kaldır">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
         </div>
         <span class="media-type-badge badge" :class="item.media_type === 'image' ? 'badge-accent' : 'badge-warning'">
           {{ item.media_type === 'image' ? '📷' : '🎬' }} {{ item.media_type }}
@@ -137,6 +149,9 @@ async function uploadFile(file) {
 <style scoped>
 .media-uploader {
   padding: var(--space-5);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
 }
 
 .uploader-title {
@@ -144,6 +159,7 @@ async function uploadFile(file) {
   font-weight: 600;
   color: var(--text-secondary);
   margin-bottom: var(--space-4);
+  letter-spacing: -0.01em;
 }
 
 /* ── Drop Zone ── */
@@ -154,16 +170,17 @@ async function uploadFile(file) {
   text-align: center;
   cursor: pointer;
   transition: all var(--transition-fast);
+  background: var(--bg-card);
 }
 
 .drop-zone:hover {
   border-color: var(--accent);
-  background: var(--accent-subtle);
+  background: var(--accent-light);
 }
 
 .drop-zone-active {
   border-color: var(--accent);
-  background: var(--accent-subtle);
+  background: var(--accent-light);
   transform: scale(1.01);
 }
 
@@ -180,8 +197,15 @@ async function uploadFile(file) {
   gap: var(--space-2);
 }
 
-.drop-icon {
-  font-size: 2rem;
+.drop-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-lg);
+  background: var(--accent-light);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin-bottom: var(--space-2);
 }
 
@@ -221,6 +245,21 @@ async function uploadFile(file) {
   color: var(--accent);
 }
 
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--bg-input);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width var(--transition-base) ease;
+}
+
 /* ── Media Grid ── */
 .media-grid {
   display: grid;
@@ -241,6 +280,7 @@ async function uploadFile(file) {
   border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--bg-input);
+  border: 1px solid var(--border);
 }
 
 .media-thumb img {
@@ -255,26 +295,34 @@ async function uploadFile(file) {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2rem;
+  color: var(--text-tertiary);
+  background: var(--bg-input);
 }
 
 .media-remove {
   position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  border: none;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
   cursor: pointer;
   font-size: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: opacity var(--transition-fast);
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-xs);
+}
+
+.media-remove:hover {
+  background: var(--error);
+  color: white;
+  border-color: var(--error);
 }
 
 .media-thumb:hover .media-remove {
