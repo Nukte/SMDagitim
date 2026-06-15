@@ -33,15 +33,15 @@
 ```
 ┌─────────────────────────────────────────────────────┐
 │                    Vue 3 Frontend                   │
-│  Login → Dashboard → Post Editör → Publish Modal   │
+│  Login → Dashboard → Post Editör → Publish Modal    │
 └────────────────────┬────────────────────────────────┘
                      │ REST API (axios)
 ┌────────────────────▼────────────────────────────────┐
-│                  FastAPI Backend                     │
-│  /api/auth  /api/oauth  /api/upload  /api/publish  │
+│                  FastAPI Backend                    │
+│  /api/auth  /api/oauth  /api/upload  /api/publish   │
 └──────┬──────────────┬──────────────────┬────────────┘
        │              │                  │
-   SQLite DB    LinkedIn API       MinIO Storage
+   SQLite DB    LinkedIn API       MinIO Storag
    (tokens)   Instagram API      (media files)
               Facebook API
 ```
