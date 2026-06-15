@@ -1,9 +1,28 @@
 """
 SQLAlchemy ORM modelleri.
 """
-from sqlalchemy import Column, Integer, String, DateTime, Text
+from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, Boolean
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from database import Base
+
+class User(Base):
+    """Kayıtlı müşterileri (tenant) saklar."""
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(255), unique=True, index=True, nullable=False)
+    hashed_password = Column(String(255), nullable=False)
+    is_active = Column(Boolean, default=True)
+    is_superuser = Column(Boolean, default=False)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    oauth_tokens = relationship("OAuthToken", back_populates="user", cascade="all, delete-orphan")
+    post_history = relationship("PostHistory", back_populates="user", cascade="all, delete-orphan")
+    ai_settings = relationship("AISettings", back_populates="user", cascade="all, delete-orphan")
+    brand_profiles = relationship("BrandProfile", back_populates="user", cascade="all, delete-orphan")
+
 
 
 class OAuthToken(Base):
@@ -11,6 +30,7 @@ class OAuthToken(Base):
     __tablename__ = "oauth_tokens"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     platform = Column(String(50), index=True)
     access_token = Column(Text, nullable=False)
     refresh_token = Column(Text, nullable=True)
@@ -22,12 +42,15 @@ class OAuthToken(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
+    user = relationship("User", back_populates="oauth_tokens")
+
 
 class PostHistory(Base):
     """Paylaşım geçmişini saklar."""
     __tablename__ = "post_history"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     job_id = Column(String(36), unique=True, index=True)
     content = Column(Text)
     hashtags = Column(Text, nullable=True)  # JSON string
@@ -36,16 +59,21 @@ class PostHistory(Base):
     status = Column(String(20), default="pending")  # pending, completed, partial, failed
     created_at = Column(DateTime, server_default=func.now())
 
+    user = relationship("User", back_populates="post_history")
+
 
 class AISettings(Base):
     """AI Modülü ayarlarını saklar."""
     __tablename__ = "ai_settings"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     provider = Column(String(50), default="gemini")  # gemini, openai, anthropic vb.
     model_name = Column(String(100), default="gemini-2.5-flash") # gemini-1.5-pro, gpt-4o vb.
     api_key = Column(Text, nullable=True) # Şifreli veya düz metin
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    user = relationship("User", back_populates="ai_settings")
 
 
 class BrandProfile(Base):
@@ -53,8 +81,22 @@ class BrandProfile(Base):
     __tablename__ = "brand_profile"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     brand_name = Column(String(255), nullable=True)
     tone = Column(String(100), nullable=True)  # Profesyonel, Eğlenceli, Samimi vb.
     target_audience = Column(Text, nullable=True)
     keywords = Column(Text, nullable=True)  # JSON list string
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    user = relationship("User", back_populates="brand_profiles")
+
+
+class AppSettings(Base):
+    """Global uygulama ayarlarını saklar. Sistemde tek satır (id=1) olarak kullanılır."""
+    __tablename__ = "app_settings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    registration_enabled = Column(Boolean, default=True)
+    global_ai_provider = Column(String(50), default="gemini")
+    global_ai_model = Column(String(100), default="gemini-2.5-flash")
+    global_ai_api_key = Column(Text, nullable=True)

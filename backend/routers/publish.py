@@ -1,9 +1,4 @@
-"""
-Sosyal medya paylaşım router'ı.
-Asenkron olarak birden fazla platforma aynı anda paylaşım yapar.
-Her platform bağımsız çalışır — biri hata alsa diğerleri etkilenmez.
-"""
-from fastapi import APIRouter, Depends, HTTPException, Header
+from fastapi import APIRouter, Depends, HTTPException
 import asyncio
 import uuid
 import logging
@@ -14,9 +9,9 @@ from models.schemas import (
     PlatformPublishStatus,
     PlatformName,
 )
-from routers.auth import verify_token
+from routers.auth import get_current_user
 from database import SessionLocal, get_db
-from models.db_models import OAuthToken, AISettings
+from models.db_models import OAuthToken, AISettings, User
 from sqlalchemy.orm import Session
 from services.platforms.instagram import InstagramPublisher
 from services.platforms.facebook import FacebookPublisher
@@ -39,21 +34,13 @@ PUBLISHERS = {
     PlatformName.linkedin.value: LinkedInPublisher(),
 }
 
-
-def get_current_user(authorization: str = Header(...)):
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Geçersiz yetkilendirme başlığı")
-    token = authorization.split(" ")[1]
-    return verify_token(token)
-
-
 async def publish_to_single_account(
     job_id: str,
     account_id: str,
     request: PublishRequest,
+    user_id: int
 ):
     """Tek bir hesaba asenkron paylaşım yapar."""
-    # Status'u "publishing" olarak güncelle
     for p in job_statuses.get(job_id, []):
         if p.account_id == account_id:
             p.status = "publishing"
@@ -62,7 +49,8 @@ async def publish_to_single_account(
         db = SessionLocal()
         try:
             token_record = db.query(OAuthToken).filter(
-                OAuthToken.account_id == account_id
+                OAuthToken.account_id == account_id,
+                OAuthToken.user_id == user_id
             ).first()
 
             if not token_record:
@@ -73,12 +61,11 @@ async def publish_to_single_account(
             platform_val = token_record.platform
             target_language = token_record.target_language
             
-            # Dil çevirisi kontrolü
             content = request.content
             hashtags = request.hashtags
             
             if target_language:
-                ai_settings_record = db.query(AISettings).first()
+                ai_settings_record = db.query(AISettings).filter(AISettings.user_id == user_id).first()
                 if ai_settings_record and ai_settings_record.api_key:
                     ai_settings = {
                         "provider": ai_settings_record.provider,
@@ -90,7 +77,6 @@ async def publish_to_single_account(
         finally:
             db.close()
 
-        # Publisher'ı çalıştır
         publisher = PUBLISHERS.get(platform_val)
         if not publisher:
             raise Exception(f"Desteklenmeyen platform: {platform_val}")
@@ -103,7 +89,6 @@ async def publish_to_single_account(
             account_id=real_account_id,
         )
 
-        # Başarılı
         for p in job_statuses.get(job_id, []):
             if p.account_id == account_id:
                 p.status = "success"
@@ -121,20 +106,19 @@ async def publish_to_single_account(
 @router.post("", response_model=PublishResponse)
 async def publish_post(
     request: PublishRequest,
-    _user: dict = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """
-    Seçilen hesaplara asenkron paylaşım başlatır.
-    Her hesap için bağımsız bir BackgroundTask oluşturur.
-    """
-    job_id = str(uuid.uuid4())
+    """Seçilen hesaplara asenkron paylaşım başlatır."""
+    job_id = f"{current_user.id}_{uuid.uuid4()}"
 
     initial_statuses = []
     
-    # DB'den hesapların platform bilgisini al
     for acc_id in request.account_ids:
-        token_record = db.query(OAuthToken).filter(OAuthToken.account_id == acc_id).first()
+        token_record = db.query(OAuthToken).filter(
+            OAuthToken.account_id == acc_id,
+            OAuthToken.user_id == current_user.id
+        ).first()
         platform_name = PlatformName(token_record.platform) if token_record else PlatformName.instagram
         initial_statuses.append(
             PlatformPublishStatus(account_id=acc_id, platform=platform_name, status="pending")
@@ -142,10 +126,9 @@ async def publish_post(
         
     job_statuses[job_id] = initial_statuses
 
-    # Her hesap için asenkron görev başlat
     for acc_id in request.account_ids:
         asyncio.create_task(
-            publish_to_single_account(job_id, acc_id, request)
+            publish_to_single_account(job_id, acc_id, request, current_user.id)
         )
 
     return PublishResponse(job_id=job_id, platforms=initial_statuses)
@@ -154,9 +137,12 @@ async def publish_post(
 @router.get("/{job_id}", response_model=PublishResponse)
 async def get_publish_status(
     job_id: str,
-    _user: dict = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     """Paylaşım durumunu sorgular (polling ile)."""
+    if not job_id.startswith(f"{current_user.id}_"):
+        raise HTTPException(status_code=403, detail="Erişim reddedildi")
+        
     statuses = job_statuses.get(job_id)
     if statuses is None:
         raise HTTPException(status_code=404, detail="İş bulunamadı")

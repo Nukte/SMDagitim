@@ -1,8 +1,4 @@
-"""
-OAuth yetkilendirme router'ı.
-Her sosyal medya platformu için OAuth akışını yönetir.
-"""
-from fastapi import APIRouter, Depends, HTTPException, Header
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 import os
@@ -13,33 +9,27 @@ import secrets
 import time
 
 from database import get_db
-from models.db_models import OAuthToken
+from models.db_models import OAuthToken, User
 from models.schemas import ConnectedAccount, OAuthStatusResponse, PlatformName, AccountSettingsUpdate
 from config import get_settings
-from routers.auth import verify_token
+from routers.auth import get_current_user
 
 logger = logging.getLogger(__name__)
 
-# OAuth CSRF state store (basit in-memory, tek sunucu için yeterli)
-_oauth_states: dict[str, float] = {}
+# OAuth CSRF state store
+# key: state_string, value: (timestamp, user_id)
+_oauth_states: dict[str, tuple[float, int]] = {}
 
 router = APIRouter(prefix="/api/oauth", tags=["OAuth"])
 
 
-def get_current_user(authorization: str = Header(...)):
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Geçersiz yetkilendirme başlığı")
-    token = authorization.split(" ")[1]
-    return verify_token(token)
-
-
 @router.get("/status", response_model=OAuthStatusResponse)
 async def get_oauth_status(
-    _user: dict = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Tüm bağlı hesapların durumunu döndürür."""
-    token_records = db.query(OAuthToken).all()
+    token_records = db.query(OAuthToken).filter(OAuthToken.user_id == current_user.id).all()
     accounts = []
     for record in token_records:
         accounts.append(ConnectedAccount(
@@ -58,10 +48,14 @@ async def get_oauth_status(
 async def update_account_settings(
     account_id: str,
     settings: AccountSettingsUpdate,
-    _user: dict = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    token_record = db.query(OAuthToken).filter(OAuthToken.account_id == account_id).first()
+    token_record = db.query(OAuthToken).filter(
+        OAuthToken.account_id == account_id,
+        OAuthToken.user_id == current_user.id
+    ).first()
+    
     if not token_record:
         raise HTTPException(status_code=404, detail="Hesap bulunamadı")
         
@@ -75,11 +69,15 @@ async def update_account_settings(
 @router.delete("/account/{account_id}/disconnect")
 async def disconnect_account(
     account_id: str,
-    _user: dict = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Bir hesabın bağlantısını keser."""
-    db_token = db.query(OAuthToken).filter(OAuthToken.account_id == account_id).first()
+    db_token = db.query(OAuthToken).filter(
+        OAuthToken.account_id == account_id,
+        OAuthToken.user_id == current_user.id
+    ).first()
+    
     if db_token:
         db.delete(db_token)
         db.commit()
@@ -87,19 +85,22 @@ async def disconnect_account(
 
 
 @router.get("/{platform}/login")
-async def oauth_login(platform: str):
-    """Kullanıcıyı platformun OAuth yetkilendirme sayfasına yönlendirir."""
+async def oauth_login(
+    platform: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Kullanıcıyı platformun OAuth yetkilendirme URL'ine yönlendirmek için link döner."""
     settings = get_settings()
 
     # Eski state'leri temizle (10 dakikadan eski)
     current_time = time.time()
-    expired = [k for k, v in _oauth_states.items() if current_time - v > 600]
+    expired = [k for k, v in _oauth_states.items() if current_time - v[0] > 600]
     for k in expired:
         _oauth_states.pop(k, None)
 
-    # Yeni state oluştur
+    # Yeni state oluştur ve user_id'yi bağla
     state = secrets.token_urlsafe(32)
-    _oauth_states[state] = time.time()
+    _oauth_states[state] = (time.time(), current_user.id)
 
     if platform in ["facebook", "instagram"]:
         app_id = settings.META_CLIENT_ID
@@ -117,7 +118,7 @@ async def oauth_login(platform: str):
             f"&response_type=code"
             f"&state={state}"
         )
-        return RedirectResponse(url=auth_url)
+        return {"url": auth_url}
 
     elif platform == "twitter":
         raise HTTPException(
@@ -141,7 +142,7 @@ async def oauth_login(platform: str):
             f"&scope={urllib.parse.quote(scopes)}"
             f"&state={state}"
         )
-        return RedirectResponse(url=auth_url)
+        return {"url": auth_url}
 
     else:
         raise HTTPException(status_code=404, detail="Geçersiz platform.")
@@ -159,7 +160,6 @@ async def oauth_callback(
     """Platformdan dönen code'u access_token'a çevirir ve kaydeder."""
     settings = get_settings()
 
-    # OAuth hata durumu (kullanıcı izin vermedi veya başka bir hata)
     if error or not code:
         error_msg = error_description or error or "Yetkilendirme kodu alınamadı"
         logger.error(f"[{platform}] OAuth hatası: {error_msg}")
@@ -167,16 +167,19 @@ async def oauth_callback(
             url=f"{settings.FRONTEND_URL}/?auth_error={urllib.parse.quote(error_msg)}"
         )
 
-    # CSRF state doğrulaması
     if not state or state not in _oauth_states:
         logger.warning(f"[{platform}] Geçersiz OAuth state parametresi")
         return RedirectResponse(
             url=f"{settings.FRONTEND_URL}/?auth_error={urllib.parse.quote('Geçersiz yetkilendirme isteği (CSRF koruması)')}"
         )
     
-    # State'i kullan ve sil (tek kullanımlık)
-    state_time = _oauth_states.pop(state, 0)
-    # 10 dakikadan eski state'leri reddet
+    state_data = _oauth_states.pop(state, None)
+    if not state_data:
+        return RedirectResponse(
+            url=f"{settings.FRONTEND_URL}/?auth_error={urllib.parse.quote('Geçersiz state')}"
+        )
+        
+    state_time, user_id = state_data
     if time.time() - state_time > 600:
         logger.warning(f"[{platform}] Süresi dolmuş OAuth state")
         return RedirectResponse(
@@ -190,7 +193,6 @@ async def oauth_callback(
         app_secret = settings.META_CLIENT_SECRET
         redirect_uri = f"{settings.BACKEND_URL}/api/oauth/{platform}/callback"
 
-        # Code → Access Token
         async with httpx.AsyncClient() as client:
             token_resp = await client.get(
                 "https://graph.facebook.com/v19.0/oauth/access_token",
@@ -208,7 +210,6 @@ async def oauth_callback(
             access_token = token_data.get("access_token")
 
             if platform == "instagram":
-                # Facebook sayfalarını al
                 pages_resp = await client.get(
                     f"https://graph.facebook.com/v19.0/me/accounts",
                     params={"access_token": access_token},
@@ -220,7 +221,6 @@ async def oauth_callback(
                     page_token = page.get("access_token")
                     page_id = page.get("id")
 
-                    # Sayfaya bağlı Instagram hesabını bul
                     ig_resp = await client.get(
                         f"https://graph.facebook.com/v19.0/{page_id}",
                         params={
@@ -233,7 +233,6 @@ async def oauth_callback(
                     account_id = ig_account.get("id")
 
                     if account_id:
-                        # IG kullanıcı adını al
                         ig_info = await client.get(
                             f"https://graph.facebook.com/v19.0/{account_id}",
                             params={
@@ -252,7 +251,6 @@ async def oauth_callback(
                         })
 
             elif platform == "facebook":
-                # Facebook sayfası bilgilerini al
                 pages_resp = await client.get(
                     f"https://graph.facebook.com/v19.0/me/accounts",
                     params={"access_token": access_token},
@@ -294,7 +292,6 @@ async def oauth_callback(
             account_id = None
             account_name = None
 
-            # Person ID'yi al
             id_token = token_data.get("id_token")
             if id_token:
                 try:
@@ -343,11 +340,11 @@ async def oauth_callback(
     if not accounts_to_save:
          return RedirectResponse(url=f"{settings.FRONTEND_URL}/?auth_error={urllib.parse.quote('Hesap bilgileri alınamadı.')}")
 
-    # Hesapları DB'ye kaydet
     for acc in accounts_to_save:
         db_token = db.query(OAuthToken).filter(
             OAuthToken.platform == acc["platform"],
-            OAuthToken.account_id == acc["account_id"]
+            OAuthToken.account_id == acc["account_id"],
+            OAuthToken.user_id == user_id
         ).first()
         
         if not db_token:
@@ -356,6 +353,7 @@ async def oauth_callback(
                 access_token=acc["access_token"],
                 account_id=acc["account_id"],
                 account_name=acc["account_name"],
+                user_id=user_id
             )
             db.add(db_token)
         else:
@@ -364,5 +362,4 @@ async def oauth_callback(
 
     db.commit()
 
-    # Frontend'e yönlendir
     return RedirectResponse(url=f"{settings.FRONTEND_URL}/?auth_success={platform}")

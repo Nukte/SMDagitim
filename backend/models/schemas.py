@@ -18,8 +18,42 @@ class PlatformName(str, Enum):
 # ── Auth ──
 
 class LoginRequest(BaseModel):
-    username: str
+    email: str
     password: str
+
+class UserCreate(BaseModel):
+    email: str
+    password: str
+
+class UserResponse(BaseModel):
+    id: int
+    email: str
+    is_active: bool
+    is_superuser: bool
+
+    class Config:
+        from_attributes = True
+
+
+class UserUpdate(BaseModel):
+    is_active: Optional[bool] = None
+    is_superuser: Optional[bool] = None
+
+class AppSettingsResponse(BaseModel):
+    registration_enabled: bool
+    global_ai_provider: str
+    global_ai_model: str
+    global_ai_api_key: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class AppSettingsUpdate(BaseModel):
+    registration_enabled: Optional[bool] = None
+    global_ai_provider: Optional[str] = None
+    global_ai_model: Optional[str] = None
+    global_ai_api_key: Optional[str] = None
+
 
 
 class TokenResponse(BaseModel):
