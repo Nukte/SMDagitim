@@ -139,9 +139,13 @@ async function updateAccount(account) {
 }
 
 async function connectPlatform(platformId) {
-  if (platformId === 'twitter') return
-  const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-  window.location.href = `${baseURL}/api/oauth/${platformId}/login`
+  try {
+    const response = await api.get(`/api/oauth/${platformId}/login`)
+    window.location.href = response.data.url
+  } catch (error) {
+    console.error('Bağlantı hatası:', error)
+    alert('Platform bağlantısı başlatılamadı.')
+  }
 }
 
 async function disconnectAccount(accountId) {

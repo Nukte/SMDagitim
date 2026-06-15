@@ -19,19 +19,19 @@
           </div>
 
           <form @submit.prevent="handleLogin" class="login-form" novalidate>
-            <!-- Username -->
+            <!-- Email -->
             <div class="input-group">
-              <label class="input-label" for="username">Kullanıcı Adı</label>
+              <label class="input-label" for="email">E-posta</label>
               <div class="input-wrapper" :class="{ 'has-error': error }">
                 <span class="input-icon">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                 </span>
                 <input
-                  id="username"
-                  v-model="username"
-                  type="text"
+                  id="email"
+                  v-model="email"
+                  type="email"
                   class="input"
-                  placeholder="kullanici_adi"
+                  placeholder="ornek@sirket.com"
                   autocomplete="username"
                   :disabled="loading"
                   @input="error = ''"
@@ -72,7 +72,7 @@
             </transition>
 
             <!-- Submit -->
-            <button type="submit" class="btn btn-primary btn-submit" :disabled="loading || !username || !password">
+            <button type="submit" class="btn btn-primary btn-submit" :disabled="loading || !email || !password">
               <span v-if="loading" class="spinner spinner-sm"></span>
               <span v-else>Giriş Yap</span>
             </button>
@@ -81,7 +81,7 @@
       </div>
 
       <p class="login-footer animate-fade-in delay-300">
-        Sosyal medyanı tek yerden yönet
+        Hesabınız yok mu? <router-link to="/register" class="register-link">Hemen Kayıt Olun</router-link>
       </p>
     </div>
   </div>
@@ -95,18 +95,18 @@ import { useAuthStore } from '../stores/auth'
 const router  = useRouter()
 const auth    = useAuthStore()
 
-const username = ref('')
+const email = ref('')
 const password = ref('')
 const showPass = ref(false)
 const loading  = ref(false)
 const error    = ref('')
 
 async function handleLogin() {
-  if (!username.value || !password.value) return
+  if (!email.value || !password.value) return
   loading.value = true
   error.value   = ''
   try {
-    await auth.login(username.value, password.value)
+    await auth.login(email.value, password.value)
     router.push('/')
   } catch (e) {
     error.value = e.response?.data?.detail || 'Kullanıcı adı veya şifre hatalı.'
@@ -289,9 +289,19 @@ async function handleLogin() {
 
 /* Footer */
 .login-footer {
-  font-size: var(--font-size-xs);
-  color: var(--text-tertiary);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
   text-align: center;
+}
+.register-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.register-link:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
 }
 
 /* Transitions */
