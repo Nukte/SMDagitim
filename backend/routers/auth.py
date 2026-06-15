@@ -5,6 +5,7 @@ Sabit admin kullanıcı/şifre ile JWT token üretir. Kayıt olma özelliği yok
 from fastapi import APIRouter, HTTPException, status
 from datetime import datetime, timedelta, timezone
 import jwt
+import hmac
 
 from config import get_settings
 from models.schemas import LoginRequest, TokenResponse
@@ -47,7 +48,8 @@ async def login(request: LoginRequest):
     """
     settings = get_settings()
 
-    if request.username != settings.ADMIN_USERNAME or request.password != settings.ADMIN_PASSWORD:
+    if not (hmac.compare_digest(request.username, settings.ADMIN_USERNAME) and 
+            hmac.compare_digest(request.password, settings.ADMIN_PASSWORD)):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Kullanıcı adı veya şifre hatalı"

@@ -1,0 +1,15 @@
+.env
+*.env
+.env.*
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+app.db
+*.db
+*.sqlite3
+key.md
+*.pem
+*.key
+*.cert
