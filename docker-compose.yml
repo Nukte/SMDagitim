@@ -1,32 +1,29 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:15-alpine
     container_name: smd-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: smd_user
-      POSTGRES_PASSWORD: smd_password
-      POSTGRES_DB: smd_db
+      POSTGRES_USER: ${POSTGRES_USER:-smd_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-smd_password}
+      POSTGRES_DB: ${POSTGRES_DB:-smd_db}
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U smd_user -d smd_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-smd_user} -d ${POSTGRES_DB:-smd_db}"]
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - smd-network
 
   minio:
     image: minio/minio
     container_name: smd-minio
     restart: unless-stopped
-    ports:
-      - "9000:9000"
-      - "9001:9001"
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
@@ -35,27 +32,48 @@ services:
       interval: 30s
       timeout: 20s
       retries: 3
+    networks:
+      - smd-network
 
   backend:
-    build: 
+    build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: smd-backend
     restart: unless-stopped
     environment:
-      - DATABASE_URL=postgresql://smd_user:smd_password@db:5432/smd_db
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-smd_user}:${POSTGRES_PASSWORD:-smd_password}@db:5432/${POSTGRES_DB:-smd_db}
       - MINIO_ENDPOINT=http://minio:9000
-      - MINIO_ACCESS_KEY=minioadmin
-      - MINIO_SECRET_KEY=minioadmin
-      # JWT Ayarları -> Bunları sunucunuzda, coolify üzerinden overwrite etmenizi öneririz
-      - JWT_SECRET=change_me_in_production_really
-      - ADMIN_USERNAME=admin
-      - ADMIN_PASSWORD=secret123
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin}
+      - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-social-media-uploads}
+      - MINIO_PUBLIC_URL=${MINIO_PUBLIC_URL:-}
+      - JWT_SECRET=${JWT_SECRET}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - BACKEND_URL=${BACKEND_URL}
+      - DEBUG=False
+      - META_CLIENT_ID=${META_CLIENT_ID:-}
+      - META_CLIENT_SECRET=${META_CLIENT_SECRET:-}
+      - META_ACCESS_TOKEN=${META_ACCESS_TOKEN:-}
+      - LINKEDIN_CLIENT_ID=${LINKEDIN_CLIENT_ID:-}
+      - LINKEDIN_CLIENT_SECRET=${LINKEDIN_CLIENT_SECRET:-}
+      - TWITTER_CLIENT_ID=${TWITTER_CLIENT_ID:-}
+      - TWITTER_CLIENT_SECRET=${TWITTER_CLIENT_SECRET:-}
     depends_on:
       db:
         condition: service_healthy
       minio:
-        condition: service_started
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    networks:
+      - smd-network
 
   frontend:
     build:
@@ -66,9 +84,15 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    networks:
+      - smd-network
 
 volumes:
   pg_data:
   minio_data:
 
+networks:
+  smd-network:
+    driver: bridge
