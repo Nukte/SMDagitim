@@ -17,7 +17,6 @@
 - 🖼️ **Medya desteği** — Görsel yükleme ve platform önizleme (presigned URL akışı)
 - 👁️ **Gerçek zamanlı önizleme** — Her platform için ayrı post görünümü
 - ⚡ **Asenkron yayın** — Platformlar paralel çalışır, biri hata alsa diğerleri etkilenmez
-- 🎨 **"Void & Jade" design system** — Space Grotesk font, neon jade aksanlar
 
 ## 🛠️ Tech Stack
 
