@@ -51,14 +51,16 @@ app = FastAPI(
 )
 
 # CORS
+cors_origins = [settings.FRONTEND_URL]
+if settings.DEBUG:
+    cors_origins.extend([
+        "http://localhost:5173",
+        "http://localhost:3000",
+    ])
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        settings.FRONTEND_URL, 
-        "http://localhost:5173", 
-        "http://localhost:3000",
-        "https://smd.vercel.app" # Production Vercel app domain (örnek)
-    ],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -74,4 +76,9 @@ app.include_router(ai.router)
 
 @app.get("/", tags=["Health"])
 async def health_check():
-    return {"status": "ok", "app": settings.APP_NAME}
+    return {"status": "ok", "app": settings.APP_NAME, "debug": settings.DEBUG}
+
+@app.get("/api/health", tags=["Health"])
+async def api_health():
+    """Docker/Coolify health check endpoint'i."""
+    return {"status": "ok"}
