@@ -9,6 +9,8 @@ import os
 import urllib.parse
 import httpx
 import logging
+import secrets
+import time
 
 from database import get_db
 from models.db_models import OAuthToken
@@ -17,6 +19,9 @@ from config import get_settings
 from routers.auth import verify_token
 
 logger = logging.getLogger(__name__)
+
+# OAuth CSRF state store (basit in-memory, tek sunucu için yeterli)
+_oauth_states: dict[str, float] = {}
 
 router = APIRouter(prefix="/api/oauth", tags=["OAuth"])
 
@@ -86,6 +91,16 @@ async def oauth_login(platform: str):
     """Kullanıcıyı platformun OAuth yetkilendirme sayfasına yönlendirir."""
     settings = get_settings()
 
+    # Eski state'leri temizle (10 dakikadan eski)
+    current_time = time.time()
+    expired = [k for k, v in _oauth_states.items() if current_time - v > 600]
+    for k in expired:
+        _oauth_states.pop(k, None)
+
+    # Yeni state oluştur
+    state = secrets.token_urlsafe(32)
+    _oauth_states[state] = time.time()
+
     if platform in ["facebook", "instagram"]:
         app_id = settings.META_CLIENT_ID
         if not app_id:
@@ -100,6 +115,7 @@ async def oauth_login(platform: str):
             f"&redirect_uri={urllib.parse.quote(redirect_uri)}"
             f"&scope={urllib.parse.quote(scopes)}"
             f"&response_type=code"
+            f"&state={state}"
         )
         return RedirectResponse(url=auth_url)
 
@@ -123,6 +139,7 @@ async def oauth_login(platform: str):
             f"&client_id={client_id}"
             f"&redirect_uri={urllib.parse.quote(redirect_uri)}"
             f"&scope={urllib.parse.quote(scopes)}"
+            f"&state={state}"
         )
         return RedirectResponse(url=auth_url)
 
@@ -137,6 +154,7 @@ async def oauth_callback(
     code: str = None,
     error: str = None,
     error_description: str = None,
+    state: str = None,
 ):
     """Platformdan dönen code'u access_token'a çevirir ve kaydeder."""
     settings = get_settings()
@@ -147,6 +165,22 @@ async def oauth_callback(
         logger.error(f"[{platform}] OAuth hatası: {error_msg}")
         return RedirectResponse(
             url=f"{settings.FRONTEND_URL}/?auth_error={urllib.parse.quote(error_msg)}"
+        )
+
+    # CSRF state doğrulaması
+    if not state or state not in _oauth_states:
+        logger.warning(f"[{platform}] Geçersiz OAuth state parametresi")
+        return RedirectResponse(
+            url=f"{settings.FRONTEND_URL}/?auth_error={urllib.parse.quote('Geçersiz yetkilendirme isteği (CSRF koruması)')}"
+        )
+    
+    # State'i kullan ve sil (tek kullanımlık)
+    state_time = _oauth_states.pop(state, 0)
+    # 10 dakikadan eski state'leri reddet
+    if time.time() - state_time > 600:
+        logger.warning(f"[{platform}] Süresi dolmuş OAuth state")
+        return RedirectResponse(
+            url=f"{settings.FRONTEND_URL}/?auth_error={urllib.parse.quote('Yetkilendirme süresi doldu, lütfen tekrar deneyin')}"
         )
 
     accounts_to_save = []
