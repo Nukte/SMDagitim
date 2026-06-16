@@ -71,8 +71,7 @@ def initialize_bucket():
                 {
                     'AllowedHeaders': ['*'],
                     'AllowedMethods': ['GET', 'PUT', 'POST', 'HEAD'],
-                    'AllowedOrigins': ['*'],
-                    'ExposeHeaders': ['ETag']
+                    'AllowedOrigins': ['*']
                 }
             ]
         }
