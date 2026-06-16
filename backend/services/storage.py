@@ -42,25 +42,48 @@ def initialize_bucket():
         logger.info(f"Bucket '{settings.MINIO_BUCKET_NAME}' oluşturuluyor...")
         try:
             s3.create_bucket(Bucket=settings.MINIO_BUCKET_NAME)
-
-            # 24 saat sonra dosyaları sil
-            lifecycle_config = {
-                "Rules": [
-                    {
-                        "ID": "auto-delete-24h",
-                        "Filter": {"Prefix": ""},
-                        "Status": "Enabled",
-                        "Expiration": {"Days": 1},
-                    }
-                ]
-            }
-            s3.put_bucket_lifecycle_configuration(
-                Bucket=settings.MINIO_BUCKET_NAME,
-                LifecycleConfiguration=lifecycle_config,
-            )
-            logger.info("Bucket oluşturuldu. 24 saat lifecycle policy eklendi.")
+            logger.info("Bucket oluşturuldu.")
         except Exception as e:
             logger.error(f"Bucket oluşturma hatası: {e}")
+            return
+
+    # Bucket varsa veya yeni oluşturulduysa her halükarda kuralları uygula
+    try:
+        # 24 saat sonra dosyaları sil
+        lifecycle_config = {
+            "Rules": [
+                {
+                    "ID": "auto-delete-24h",
+                    "Filter": {"Prefix": ""},
+                    "Status": "Enabled",
+                    "Expiration": {"Days": 1},
+                }
+            ]
+        }
+        s3.put_bucket_lifecycle_configuration(
+            Bucket=settings.MINIO_BUCKET_NAME,
+            LifecycleConfiguration=lifecycle_config,
+        )
+
+        # CORS Policy (Frontend'in dosyaları doğrudan yükleyebilmesi için gerekli)
+        cors_config = {
+            'CORSRules': [
+                {
+                    'AllowedHeaders': ['*'],
+                    'AllowedMethods': ['GET', 'PUT', 'POST', 'HEAD'],
+                    'AllowedOrigins': ['*'],
+                    'ExposeHeaders': ['ETag']
+                }
+            ]
+        }
+        s3.put_bucket_cors(
+            Bucket=settings.MINIO_BUCKET_NAME,
+            CORSConfiguration=cors_config
+        )
+
+        logger.info("Lifecycle ve CORS poliçeleri başarıyla güncellendi.")
+    except Exception as e:
+        logger.error(f"Bucket policy/cors güncelleme hatası: {e}")
 
 
 def generate_presigned_post(filename: str, content_type: str, expiration: int = 300):
