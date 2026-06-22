@@ -138,6 +138,14 @@ class AccountSettingsUpdate(BaseModel):
     target_language: Optional[str] = None
 
 
+# ── Publish Settings ──
+
+class PublishSettingsSchema(BaseModel):
+    instagram_aspect_ratio: str = Field(default="4:5")
+    facebook_aspect_ratio: str = Field(default="1.91:1")
+    linkedin_aspect_ratio: str = Field(default="1.91:1")
+    twitter_aspect_ratio: str = Field(default="16:9")
+
 # ── AI Module ──
 
 class AISettingsSchema(BaseModel):

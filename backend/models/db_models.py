@@ -22,6 +22,7 @@ class User(Base):
     post_history = relationship("PostHistory", back_populates="user", cascade="all, delete-orphan")
     ai_settings = relationship("AISettings", back_populates="user", cascade="all, delete-orphan")
     brand_profiles = relationship("BrandProfile", back_populates="user", cascade="all, delete-orphan")
+    publish_settings = relationship("PublishSettings", back_populates="user", cascade="all, delete-orphan", uselist=False)
 
 
 
@@ -100,3 +101,18 @@ class AppSettings(Base):
     global_ai_provider = Column(String(50), default="gemini")
     global_ai_model = Column(String(100), default="gemini-2.5-flash")
     global_ai_api_key = Column(Text, nullable=True)
+
+
+class PublishSettings(Base):
+    """Her kullanıcının sosyal medya platformları için varsayılan yayınlama ayarlarını (ör: en-boy oranları) saklar."""
+    __tablename__ = "publish_settings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    instagram_aspect_ratio = Column(String(20), default="4:5")
+    facebook_aspect_ratio = Column(String(20), default="1.91:1")
+    linkedin_aspect_ratio = Column(String(20), default="1.91:1")
+    twitter_aspect_ratio = Column(String(20), default="16:9")
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    user = relationship("User", back_populates="publish_settings")
