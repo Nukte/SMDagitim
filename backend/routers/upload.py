@@ -1,15 +1,55 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from models.schemas import (
     PresignedUrlRequest,
     PresignedUrlResponse,
     UploadConfirmRequest,
     UploadConfirmResponse,
 )
-from services.storage import generate_presigned_post, generate_presigned_get
+from services.storage import generate_presigned_post, generate_presigned_get, upload_file_to_storage
 from routers.auth import get_current_user
 from models.db_models import User
+import os
+import uuid
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/upload", tags=["Upload"])
+
+@router.post("/direct", response_model=UploadConfirmResponse)
+async def upload_direct(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Dosyayı backend üzerinden doğrudan MinIO'ya yükler.
+    (Presigned URL sorunlarına alternatif garanti yöntem)
+    """
+    try:
+        content_type = file.content_type
+        media_type = "video" if content_type and content_type.startswith("video/") else "image"
+        
+        # Dosya uzantısını al
+        ext = os.path.splitext(file.filename)[1] if file.filename else ".jpg"
+        
+        # Dosyayı oku
+        file_bytes = await file.read()
+        
+        # Storage servisini kullanarak yükle
+        public_url, object_key = upload_file_to_storage(file_bytes, content_type or "application/octet-stream", ext)
+        
+        return UploadConfirmResponse(
+            object_key=object_key,
+            public_url=public_url,
+            media_type=media_type,
+        )
+    except Exception as e:
+        logger.error(f"Doğrudan yükleme hatası: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Dosya yüklenemedi: {str(e)}",
+        )
+
 
 @router.post("/presign", response_model=PresignedUrlResponse)
 async def get_presigned_url(

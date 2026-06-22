@@ -114,18 +114,12 @@ async function uploadFile(file) {
   currentFileName.value = file.name
 
   try {
-    // 1. Presigned URL al
-    const presignedData = await postStore.getPresignedUrl(file.name, file.type)
-
-    // 2. Doğrudan MinIO'ya yükle
-    await postStore.uploadToMinIO(file, presignedData, (progress) => {
+    // 1. Doğrudan backend üzerinden yükle (Presigned URL sorunlarını atlar)
+    const confirmData = await postStore.uploadDirect(file, (progress) => {
       uploadProgress.value = progress
     })
 
-    // 3. Yükleme onayı al
-    const confirmData = await postStore.confirmUpload(presignedData.object_key, file.type)
-
-    // 4. Local preview URL oluştur
+    // 2. Local preview URL oluştur
     const localPreview = file.type.startsWith('image/') ? URL.createObjectURL(file) : null
 
     // 5. Store'a ekle
