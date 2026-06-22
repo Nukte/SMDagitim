@@ -100,6 +100,29 @@ export const usePostStore = defineStore('post', () => {
     })
   }
 
+  // Frontend'den dosyayı backend'e atıp, backend üzerinden MinIO'ya yükleme yöntemi (Presigned URL hatalarını aşmak için)
+  async function uploadDirect(file, onProgress) {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      const response = await api.post('/api/upload/direct', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        },
+        onUploadProgress: (progressEvent) => {
+          if (onProgress && progressEvent.total) {
+            onProgress(Math.round((progressEvent.loaded / progressEvent.total) * 100))
+          }
+        }
+      })
+      return response.data
+    } catch (error) {
+      console.error('Direct upload failed:', error)
+      throw error
+    }
+  }
+
   // Medya ekle
   function addMedia(mediaItem) {
     media.value.push(mediaItem)
@@ -163,6 +186,7 @@ export const usePostStore = defineStore('post', () => {
     getPresignedUrl,
     confirmUpload,
     uploadToMinIO,
+    uploadDirect,
     addMedia,
     removeMedia,
     publishPost,
