@@ -3,6 +3,7 @@ import asyncio
 import uuid
 import logging
 
+from models import schemas
 from models.schemas import (
     PublishRequest,
     PublishResponse,
@@ -11,7 +12,7 @@ from models.schemas import (
 )
 from routers.auth import get_current_user
 from database import SessionLocal, get_db
-from models.db_models import OAuthToken, AISettings, User
+from models.db_models import OAuthToken, AISettings, User, PublishSettings
 from sqlalchemy.orm import Session
 from services.platforms.instagram import InstagramPublisher
 from services.platforms.facebook import FacebookPublisher
@@ -22,6 +23,35 @@ from services.ai import translate_content
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/publish", tags=["Publishing"])
+
+@router.get("/settings", response_model=schemas.PublishSettingsSchema)
+def get_publish_settings(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    settings = db.query(PublishSettings).filter(PublishSettings.user_id == current_user.id).first()
+    if not settings:
+        return schemas.PublishSettingsSchema()
+    return schemas.PublishSettingsSchema(
+        instagram_aspect_ratio=settings.instagram_aspect_ratio,
+        facebook_aspect_ratio=settings.facebook_aspect_ratio,
+        linkedin_aspect_ratio=settings.linkedin_aspect_ratio,
+        twitter_aspect_ratio=settings.twitter_aspect_ratio
+    )
+
+@router.post("/settings", response_model=schemas.PublishSettingsSchema)
+def update_publish_settings(settings_in: schemas.PublishSettingsSchema, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    settings = db.query(PublishSettings).filter(PublishSettings.user_id == current_user.id).first()
+    if not settings:
+        settings = PublishSettings(user_id=current_user.id)
+        db.add(settings)
+    
+    settings.instagram_aspect_ratio = settings_in.instagram_aspect_ratio
+    settings.facebook_aspect_ratio = settings_in.facebook_aspect_ratio
+    settings.linkedin_aspect_ratio = settings_in.linkedin_aspect_ratio
+    settings.twitter_aspect_ratio = settings_in.twitter_aspect_ratio
+        
+    db.commit()
+    db.refresh(settings)
+    return settings_in
+
 
 # In-memory job status tracking
 job_statuses: dict[str, list[PlatformPublishStatus]] = {}
@@ -74,6 +104,28 @@ async def publish_to_single_account(
                     }
                     content, hashtags = await translate_content(content, hashtags, target_language, ai_settings)
                     
+            # Publish Settings'i çek
+            publish_settings = db.query(PublishSettings).filter(PublishSettings.user_id == user_id).first()
+            target_ratio_str = None
+            if publish_settings:
+                if platform_val == "instagram":
+                    target_ratio_str = publish_settings.instagram_aspect_ratio
+                elif platform_val == "facebook":
+                    target_ratio_str = publish_settings.facebook_aspect_ratio
+                elif platform_val == "linkedin":
+                    target_ratio_str = publish_settings.linkedin_aspect_ratio
+                elif platform_val == "twitter":
+                    target_ratio_str = publish_settings.twitter_aspect_ratio
+            else:
+                # Default values if settings not found
+                default_ratios = {
+                    "instagram": "4:5",
+                    "facebook": "1.91:1",
+                    "linkedin": "1.91:1",
+                    "twitter": "16:9"
+                }
+                target_ratio_str = default_ratios.get(platform_val, "1:1")
+
         finally:
             db.close()
 
@@ -81,10 +133,31 @@ async def publish_to_single_account(
         if not publisher:
             raise Exception(f"Desteklenmeyen platform: {platform_val}")
 
+        # Görselleri platformun en-boy oranına göre uyarla
+        from services.image_processor import adapt_image_for_platform
+        from services.storage import upload_file_to_storage
+        
+        processed_media = []
+        for m in request.media:
+            if m.type == "image":
+                logger.info(f"[{account_id}] Görsel işleniyor. Hedef oran: {target_ratio_str}")
+                try:
+                    img_bytes, content_type = await adapt_image_for_platform(m.url, target_ratio_str)
+                    new_url, new_key = upload_file_to_storage(img_bytes, content_type)
+                    # Create a new MediaItem instance with the processed URL
+                    processed_m = schemas.MediaItem(url=new_url, object_key=new_key, type="image")
+                    processed_media.append(processed_m)
+                    logger.info(f"[{account_id}] Görsel işlendi: {new_url}")
+                except Exception as e:
+                    logger.error(f"[{account_id}] Görsel işleme hatası: {e}. Orijinal görsel kullanılacak.")
+                    processed_media.append(m)
+            else:
+                processed_media.append(m)
+
         result = await publisher.publish(
             content=content,
             hashtags=hashtags,
-            media=request.media,
+            media=processed_media,
             access_token=access_token,
             account_id=real_account_id,
         )

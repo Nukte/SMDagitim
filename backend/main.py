@@ -3,8 +3,12 @@ Sosyal Medya Dağıtım Platformu — FastAPI Ana Uygulama
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Request
+from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 import logging
+import traceback
+import sys
 
 from config import get_settings
 from database import engine, SessionLocal
@@ -111,3 +115,45 @@ async def health_check():
 async def api_health():
     """Docker/Coolify health check endpoint'i."""
     return {"status": "ok"}
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """
+    Uygulama genelindeki yakalanmayan tüm hataları (exception) yakalar.
+    Hatanın tam olarak hangi dosyada ve satırda meydana geldiğini tespit edip loglar.
+    """
+    # Hatanın traceback (iz sürme) detaylarını al
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+    tb = traceback.extract_tb(exc_traceback)
+    
+    # Hataya neden olan en son konumu bul
+    if tb:
+        last_trace = tb[-1]
+        filename = last_trace.filename
+        line_no = last_trace.lineno
+        func_name = last_trace.name
+        error_location = f"{filename} satır {line_no} ({func_name} içinde)"
+    else:
+        error_location = "Bilinmeyen Konum"
+
+    # Loglara detaylı şekilde yaz
+    logger.error("="*50)
+    logger.error(f"🚨 YAKALANMAYAN HATA: {request.method} {request.url}")
+    logger.error(f"📍 KONUM: {error_location}")
+    logger.error(f"❌ HATA: {str(exc)}")
+    logger.error("Detaylı Traceback:")
+    for line in traceback.format_exc().splitlines():
+        logger.error(f"  {line}")
+    logger.error("="*50)
+
+    # İstemciye (frontend vb.) hatanın nerede olduğunu gösteren bir yanıt dön
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "Sunucu içinde beklenmeyen bir hata oluştu.",
+            "error_message": str(exc),
+            "error_location": error_location,
+            "error_type": type(exc).__name__
+        }
+    )

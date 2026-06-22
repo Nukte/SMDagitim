@@ -150,3 +150,37 @@ def generate_presigned_get(object_key: str, expiration: int = 3600) -> str:
     except ClientError as e:
         logger.error(f"Presigned GET hatası: {e}")
         raise
+
+
+def upload_file_to_storage(file_bytes: bytes, content_type: str, ext: str = ".jpg") -> tuple[str, str]:
+    """
+    Byte array (file_bytes) halindeki bir dosyayı doğrudan MinIO'ya yükler ve 
+    public URL'sini döndürür. Backend tarafından işlenmiş medyalar için kullanılır.
+    
+    Returns: (public_url, object_key)
+    """
+    settings = get_settings()
+    s3 = get_s3_client()
+    
+    object_key = f"uploads/processed/{uuid.uuid4().hex}{ext}"
+    
+    try:
+        s3.put_object(
+            Bucket=settings.MINIO_BUCKET_NAME,
+            Key=object_key,
+            Body=file_bytes,
+            ContentType=content_type,
+        )
+        
+        # Public URL'i oluştur
+        # Storage URL path + object_key (frontend public erişimi için presigned kullanmadan direct public access gerektirebilir)
+        # Ama bucket default olarak public read mi? CORS ayarlandı ama policy'de public read var mı emin değilim.
+        # Bu yüzden 1 haftalık uzun süreli presigned URL oluşturabiliriz veya doğrudan URL döndürebiliriz.
+        # Şimdilik presigned URL döndürelim:
+        url = generate_presigned_get(object_key, expiration=7*24*3600) # 7 günlük URL
+        
+        return url, object_key
+        
+    except ClientError as e:
+        logger.error(f"Storage doğrudan yükleme hatası: {e}")
+        raise e

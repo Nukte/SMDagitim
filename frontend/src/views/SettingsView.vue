@@ -93,6 +93,58 @@
       </div>
     </section>
 
+    <!-- Publish Settings Section -->
+    <section class="card settings-card animate-fade-in-up delay-200">
+      <div class="card-header">
+        <h2 class="card-title">Paylaşım ve Boyut Ayarları</h2>
+      </div>
+      <div class="card-body">
+        <p class="settings-desc">Her platform için varsayılan görsel boyutlandırma (en-boy) oranlarını belirleyin. Görselleriniz yayınlanırken otomatik olarak bulanık arka plan (blur padding) ile bu oranlara uyarlanacaktır.</p>
+
+        <div class="form-grid">
+          <div class="input-group">
+            <label class="input-label">Instagram En-Boy Oranı</label>
+            <select v-model="publishSettings.instagram_aspect_ratio" class="input">
+              <option value="1:1">Kare (1:1)</option>
+              <option value="4:5">Dikey (4:5) - Önerilen</option>
+              <option value="1.91:1">Yatay (1.91:1)</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label">Facebook En-Boy Oranı</label>
+            <select v-model="publishSettings.facebook_aspect_ratio" class="input">
+              <option value="1:1">Kare (1:1)</option>
+              <option value="4:5">Dikey (4:5)</option>
+              <option value="1.91:1">Yatay (1.91:1) - Önerilen</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label">LinkedIn En-Boy Oranı</label>
+            <select v-model="publishSettings.linkedin_aspect_ratio" class="input">
+              <option value="1:1">Kare (1:1)</option>
+              <option value="4:5">Dikey (4:5)</option>
+              <option value="1.91:1">Yatay (1.91:1) - Önerilen</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label">X (Twitter) En-Boy Oranı</label>
+            <select v-model="publishSettings.twitter_aspect_ratio" class="input">
+              <option value="1:1">Kare (1:1)</option>
+              <option value="16:9">Geniş Ekran (16:9) - Önerilen</option>
+              <option value="1.91:1">Yatay (1.91:1)</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" @click="savePublishSettings" :disabled="publishStore.isLoading">
+          {{ publishStore.isLoading ? 'Kaydediliyor...' : 'Paylaşım Ayarlarını Kaydet' }}
+        </button>
+      </div>
+    </section>
+
     <!-- Notifications -->
     <div v-if="successMessage" class="notification notification-success animate-fade-in-up">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -109,8 +161,10 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useAiStore } from '../stores/ai'
+import { usePublishSettingsStore } from '../stores/publishSettings'
 
 const aiStore = useAiStore()
+const publishStore = usePublishSettingsStore()
 
 const settings = ref({
   provider: 'gemini',
@@ -125,6 +179,13 @@ const brand = ref({
   keywords: []
 })
 
+const publishSettings = ref({
+  instagram_aspect_ratio: '4:5',
+  facebook_aspect_ratio: '1.91:1',
+  linkedin_aspect_ratio: '1.91:1',
+  twitter_aspect_ratio: '16:9'
+})
+
 const successMessage = ref('')
 const brandFileInput = ref(null)
 const isAnalyzing = ref(false)
@@ -137,14 +198,20 @@ const keywordsString = computed({
 })
 
 onMounted(async () => {
-  await aiStore.fetchSettings()
-  await aiStore.fetchBrandProfile()
+  await Promise.all([
+    aiStore.fetchSettings(),
+    aiStore.fetchBrandProfile(),
+    publishStore.fetchSettings()
+  ])
 
   if (aiStore.settings) {
     settings.value = { ...aiStore.settings, api_key: aiStore.settings.api_key || '' }
   }
   if (aiStore.brandProfile) {
     brand.value = { ...aiStore.brandProfile }
+  }
+  if (publishStore.settings) {
+    publishSettings.value = { ...publishStore.settings }
   }
 })
 
@@ -162,6 +229,15 @@ const saveBrand = async () => {
   const success = await aiStore.saveBrandProfile(brand.value)
   if (success) {
     successMessage.value = 'Marka profili başarıyla kaydedildi.'
+    setTimeout(() => { successMessage.value = '' }, 3000)
+  }
+}
+
+const savePublishSettings = async () => {
+  successMessage.value = ''
+  const success = await publishStore.saveSettings(publishSettings.value)
+  if (success) {
+    successMessage.value = 'Paylaşım ve boyut ayarları başarıyla kaydedildi.'
     setTimeout(() => { successMessage.value = '' }, 3000)
   }
 }
