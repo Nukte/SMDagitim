@@ -36,6 +36,19 @@ async def lifespan(app: FastAPI):
     # Veritabanı başlatma ve ilk admin oluşturma
     db = SessionLocal()
     try:
+        # Schema Migration (Manuel)
+        from sqlalchemy import text
+        with engine.begin() as conn:
+            try:
+                if engine.dialect.name == "postgresql":
+                    conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name VARCHAR(255)"))
+                    conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_name VARCHAR(255)"))
+                elif engine.dialect.name == "sqlite":
+                    conn.execute(text("ALTER TABLE users ADD COLUMN first_name VARCHAR(255)"))
+                    conn.execute(text("ALTER TABLE users ADD COLUMN last_name VARCHAR(255)"))
+            except Exception as e:
+                logger.debug(f"Sütun ekleme uyarısı (zaten var olabilir): {e}")
+                
         settings_db = db.query(db_models.AppSettings).first()
         if not settings_db:
             db.add(db_models.AppSettings())

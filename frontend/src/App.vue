@@ -50,10 +50,10 @@
 
       <div class="sidebar-footer">
         <div class="sidebar-user">
-          <div class="sidebar-avatar">A</div>
+          <div class="sidebar-avatar">{{ userInitials }}</div>
           <div class="sidebar-user-info">
-            <div class="sidebar-username">Admin</div>
-            <div class="sidebar-role">Yönetici</div>
+            <div class="sidebar-username" :title="userFullName">{{ userFullName }}</div>
+            <div class="sidebar-role">{{ userRole }}</div>
           </div>
           <button class="btn-icon logout-btn" @click="handleLogout" title="Çıkış Yap">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -98,6 +98,28 @@ const authStore = useAuthStore()
 const sidebarOpen = ref(false)
 
 const isAuthPage = computed(() => ['/login', '/register'].includes(route.path))
+
+const userFullName = computed(() => {
+  if (authStore.firstName || authStore.lastName) {
+    return `${authStore.firstName} ${authStore.lastName}`.trim()
+  }
+  return authStore.email ? authStore.email.split('@')[0] : 'Kullanıcı'
+})
+
+const userInitials = computed(() => {
+  if (authStore.firstName && authStore.lastName) {
+    return `${authStore.firstName.charAt(0)}${authStore.lastName.charAt(0)}`.toUpperCase()
+  } else if (authStore.firstName) {
+    return authStore.firstName.charAt(0).toUpperCase()
+  } else if (authStore.email) {
+    return authStore.email.charAt(0).toUpperCase()
+  }
+  return 'U'
+})
+
+const userRole = computed(() => {
+  return authStore.isSuperuser ? 'Yönetici' : 'Üye'
+})
 
 function handleLogout() {
   authStore.logout()

@@ -30,6 +30,46 @@
             </div>
 
             <form @submit.prevent="handleRegister" class="login-form" novalidate>
+              <!-- First Name -->
+              <div class="input-group">
+                <label class="input-label" for="firstName">Ad</label>
+                <div class="input-wrapper" :class="{ 'has-error': error }">
+                  <span class="input-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  </span>
+                  <input
+                    id="firstName"
+                    v-model="firstName"
+                    type="text"
+                    class="input"
+                    placeholder="Adınız"
+                    autocomplete="given-name"
+                    :disabled="loading"
+                    @input="error = ''"
+                  />
+                </div>
+              </div>
+
+              <!-- Last Name -->
+              <div class="input-group">
+                <label class="input-label" for="lastName">Soyad</label>
+                <div class="input-wrapper" :class="{ 'has-error': error }">
+                  <span class="input-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  </span>
+                  <input
+                    id="lastName"
+                    v-model="lastName"
+                    type="text"
+                    class="input"
+                    placeholder="Soyadınız"
+                    autocomplete="family-name"
+                    :disabled="loading"
+                    @input="error = ''"
+                  />
+                </div>
+              </div>
+
               <!-- Email -->
               <div class="input-group">
                 <label class="input-label" for="email">E-posta</label>
@@ -103,7 +143,7 @@
               </transition>
 
               <!-- Submit -->
-              <button type="submit" class="btn btn-primary btn-submit" :disabled="loading || !email || !password || !passwordConfirm">
+              <button type="submit" class="btn btn-primary btn-submit" :disabled="loading || !firstName || !lastName || !email || !password || !passwordConfirm">
                 <span v-if="loading" class="spinner spinner-sm"></span>
                 <span v-else>Kayıt Ol</span>
               </button>
@@ -128,6 +168,8 @@ import api from '../api/client'
 const router  = useRouter()
 const auth    = useAuthStore()
 
+const firstName = ref('')
+const lastName = ref('')
 const email = ref('')
 const password = ref('')
 const passwordConfirm = ref('')
@@ -154,7 +196,7 @@ onMounted(() => {
 })
 
 async function handleRegister() {
-  if (!email.value || !password.value) return
+  if (!firstName.value || !lastName.value || !email.value || !password.value) return
   if (password.value !== passwordConfirm.value) {
     error.value = "Şifreler eşleşmiyor."
     return
@@ -163,7 +205,7 @@ async function handleRegister() {
   loading.value = true
   error.value   = ''
   try {
-    await auth.register(email.value, password.value)
+    await auth.register(firstName.value, lastName.value, email.value, password.value)
     // Kayıt sonrası otomatik login ol
     await auth.login(email.value, password.value)
     router.push('/')
