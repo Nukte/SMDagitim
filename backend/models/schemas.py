@@ -22,11 +22,15 @@ class LoginRequest(BaseModel):
     password: str
 
 class UserCreate(BaseModel):
+    first_name: str
+    last_name: str
     email: str
     password: str
 
 class UserResponse(BaseModel):
     id: int
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     email: str
     is_active: bool
     is_superuser: bool
