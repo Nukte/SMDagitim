@@ -1,51 +1,71 @@
 <template>
-  <div class="ai-overlay" v-if="show" @click.self="close">
-    <div class="ai-modal">
-      <div class="ai-header">
-        <div class="ai-header-left">
-          <div class="ai-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"/></svg>
+  <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" v-if="show" @click.self="close">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-fade-in-up">
+      <!-- Header -->
+      <div class="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-brand flex items-center justify-center">
+            <Sparkles class="w-5 h-5" />
           </div>
-          <h3>AI İçerik Üreticisi</h3>
+          <h3 class="text-lg font-semibold text-slate-900 dark:text-white">AI İçerik Üreticisi</h3>
         </div>
-        <button class="btn-icon close-btn" @click="close">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        <button class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors" @click="close">
+          <X class="w-5 h-5" />
         </button>
       </div>
 
-      <div class="ai-body">
-        <div class="input-group">
-          <label class="input-label">Konu veya İstek</label>
+      <!-- Body -->
+      <div class="p-6 space-y-6">
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Konu veya İstek</label>
           <textarea
             v-model="topic"
             rows="3"
-            class="input"
+            class="input w-full resize-none bg-slate-50 dark:bg-slate-950 focus:bg-white dark:focus:bg-slate-900"
             placeholder="Örn: Yeni ürünümüz hakkında heyecan verici bir duyuru..."
             :disabled="aiStore.isLoading"
           ></textarea>
         </div>
 
-        <div class="checkbox-row">
-          <label class="checkbox-label">
-            <input type="checkbox" v-model="generateImage" :disabled="aiStore.isLoading" />
-            <span>AI ile Görsel Üret</span>
-          </label>
+        <label class="flex items-center gap-3 cursor-pointer group">
+          <div class="relative flex items-center justify-center">
+            <input type="checkbox" v-model="generateImage" :disabled="aiStore.isLoading" class="peer sr-only" />
+            <div class="w-5 h-5 border-2 border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 peer-checked:bg-brand peer-checked:border-brand transition-colors"></div>
+            <Check class="w-3.5 h-3.5 text-white absolute opacity-0 peer-checked:opacity-100 transition-opacity" stroke-width="3" />
+          </div>
+          <span class="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">AI ile Görsel Üret</span>
+        </label>
+
+        <div v-if="aiStore.isLoading" class="flex flex-col items-center justify-center py-6 gap-4">
+          <Loader2 class="w-8 h-8 text-brand animate-spin" />
+          <p class="text-sm font-medium text-slate-500 dark:text-slate-400 animate-pulse">AI içeriği hazırlıyor, lütfen bekleyin...</p>
         </div>
 
-        <div v-if="aiStore.isLoading" class="loader-area">
-          <div class="spinner spinner-lg"></div>
-          <p>AI içeriği hazırlıyor, lütfen bekleyin...</p>
-        </div>
-
-        <div v-if="aiStore.error" class="error-box">
-          {{ aiStore.error }}
-        </div>
+        <transition 
+          enter-active-class="transition duration-200 ease-out"
+          enter-from-class="opacity-0 translate-y-2"
+          enter-to-class="opacity-100 translate-y-0"
+          leave-active-class="transition duration-150 ease-in"
+          leave-from-class="opacity-100 translate-y-0"
+          leave-to-class="opacity-0 translate-y-2"
+        >
+          <div v-if="aiStore.error" class="p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-sm font-medium flex items-start justify-between gap-3">
+            <div class="flex items-start gap-3">
+              <AlertCircle class="w-5 h-5 shrink-0 mt-0.5" />
+              <span>{{ aiStore.error }}</span>
+            </div>
+            <button @click="aiStore.clearError()" class="p-1 -mt-1 -mr-1 hover:bg-red-100 dark:hover:bg-red-500/20 rounded-lg transition-colors shrink-0">
+              <X class="w-4 h-4" />
+            </button>
+          </div>
+        </transition>
       </div>
 
-      <div class="ai-footer">
-        <button class="btn btn-secondary" @click="close" :disabled="aiStore.isLoading">İptal</button>
-        <button class="btn btn-primary" @click="generate" :disabled="!topic.trim() || aiStore.isLoading">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"/></svg>
+      <!-- Footer -->
+      <div class="p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 flex justify-end gap-3">
+        <button class="btn btn-secondary px-6" @click="close" :disabled="aiStore.isLoading">İptal</button>
+        <button class="btn btn-primary px-6 bg-gradient-to-r from-indigo-500 to-purple-500 border-0 hover:from-indigo-600 hover:to-purple-600 shadow-lg shadow-indigo-500/25" @click="generate" :disabled="!topic.trim() || aiStore.isLoading">
+          <Sparkles class="w-4 h-4 mr-2" />
           İçerik Üret
         </button>
       </div>
@@ -56,6 +76,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useAiStore } from '../stores/ai'
+import { Sparkles, X, Check, Loader2, AlertCircle } from 'lucide-vue-next'
 
 const props = defineProps({
   show: Boolean
@@ -85,134 +106,3 @@ const generate = async () => {
   }
 }
 </script>
-
-<style scoped>
-.ai-overlay {
-  position: fixed;
-  inset: 0;
-  background: var(--bg-overlay);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: var(--z-modal);
-}
-
-.ai-modal {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  width: 92%;
-  max-width: 500px;
-  box-shadow: var(--shadow-xl);
-  overflow: hidden;
-  animation: modalIn 250ms ease-out;
-}
-
-/* Header */
-.ai-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-5) var(--space-6);
-  border-bottom: 1px solid var(--border);
-}
-
-.ai-header-left {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.ai-header h3 {
-  font-size: var(--font-size-md);
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.ai-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-md);
-  background: var(--accent-light);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--accent);
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  padding: var(--space-2);
-  border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
-}
-
-.close-btn:hover {
-  background: var(--bg-input);
-  color: var(--text-primary);
-}
-
-/* Body */
-.ai-body {
-  padding: var(--space-6);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.checkbox-row {
-  display: flex;
-  align-items: center;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-
-.checkbox-label input[type="checkbox"] {
-  accent-color: var(--accent);
-  width: 16px;
-  height: 16px;
-}
-
-.loader-area {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-6) 0;
-}
-
-.loader-area p {
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
-}
-
-.error-box {
-  padding: var(--space-3) var(--space-4);
-  background: var(--error-bg);
-  border: 1px solid var(--error-border);
-  color: var(--error);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
-}
-
-/* Footer */
-.ai-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-3);
-  padding: var(--space-4) var(--space-6);
-  border-top: 1px solid var(--border);
-}
-</style>

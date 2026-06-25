@@ -1,72 +1,73 @@
 <template>
-  <div class="page-container">
+  <div class="max-w-4xl mx-auto p-4 md:p-8 animate-fade-in">
 
-    <div class="page-header">
-      <h1 class="page-title">Ayarlar</h1>
-      <p class="page-subtitle">AI sağlayıcı ayarları ve marka kimliğini yapılandır.</p>
+    <div class="mb-8">
+      <h1 class="text-3xl font-display font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Ayarlar</h1>
+      <p class="text-slate-500 dark:text-slate-400">AI sağlayıcı ayarları ve marka kimliğini yapılandır.</p>
     </div>
 
-    <!-- AI Settings Section -->
-    <section class="card settings-card animate-fade-in-up">
-      <div class="card-header">
-        <h2 class="card-title">Yapay Zeka Ayarları</h2>
-      </div>
-      <div class="card-body">
-        <p class="settings-desc">İçerik üretiminde kullanılacak AI modelini yapılandırın.</p>
+    <div class="space-y-6">
+      <!-- AI Settings Section -->
+      <section class="card p-6">
+        <div class="flex items-center gap-2 mb-6">
+          <Cpu class="w-5 h-5 text-brand" />
+          <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Yapay Zeka Ayarları</h2>
+        </div>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">İçerik üretiminde kullanılacak AI modelini yapılandırın.</p>
 
-        <div class="form-grid">
-          <div class="input-group">
-            <label class="input-label">AI Sağlayıcı</label>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div class="space-y-1.5">
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300">AI Sağlayıcı</label>
             <select v-model="settings.provider" class="input">
               <option value="gemini">Google Gemini</option>
               <option value="openai">OpenAI</option>
             </select>
           </div>
 
-          <div class="input-group">
-            <label class="input-label">Model Adı</label>
+          <div class="space-y-1.5">
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Model Adı</label>
             <input type="text" v-model="settings.model_name" placeholder="Örn: gemini-2.5-flash veya gpt-4o" class="input" />
           </div>
 
-          <div class="input-group full-width">
-            <label class="input-label">API Key</label>
+          <div class="space-y-1.5 md:col-span-2">
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300">API Key</label>
             <input type="password" v-model="settings.api_key" placeholder="AI sağlayıcısının API anahtarı" class="input" />
           </div>
         </div>
 
-        <button class="btn btn-primary" @click="saveSettings" :disabled="aiStore.isLoading">
-          {{ aiStore.isLoading ? 'Kaydediliyor...' : 'Kaydet' }}
+        <button class="btn btn-primary w-full md:w-auto" @click="saveSettings" :disabled="aiStore.isLoading">
+          <Loader2 v-if="aiStore.isLoading" class="w-4 h-4 animate-spin" />
+          <span v-else>Kaydet</span>
         </button>
-      </div>
-    </section>
+      </section>
 
-    <!-- Brand Profile Section -->
-    <section class="card settings-card animate-fade-in-up delay-100">
-      <div class="card-header">
-        <h2 class="card-title">Marka Kimliği</h2>
-      </div>
-      <div class="card-body">
-        <p class="settings-desc">Yapay zeka içerik üretirken bu marka kimliğini dikkate alacaktır.</p>
+      <!-- Brand Profile Section -->
+      <section class="card p-6">
+        <div class="flex items-center gap-2 mb-6">
+          <Palette class="w-5 h-5 text-brand" />
+          <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Marka Kimliği</h2>
+        </div>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Yapay zeka içerik üretirken bu marka kimliğini dikkate alacaktır.</p>
 
         <!-- File Upload -->
-        <div class="file-upload-area" @click="triggerBrandFileInput">
-          <input type="file" ref="brandFileInput" @change="handleFileUpload" accept=".pdf,.docx,.txt" class="file-input-hidden" />
-          <div class="file-upload-content">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-            <span v-if="isAnalyzing">Analiz ediliyor...</span>
-            <span v-else>Marka kimliği dosyası yükle (PDF, DOCX, TXT)</span>
+        <div class="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl p-8 text-center cursor-pointer hover:border-brand hover:bg-brand/5 dark:hover:bg-brand/10 transition-colors mb-6 group" @click="triggerBrandFileInput">
+          <input type="file" ref="brandFileInput" @change="handleFileUpload" accept=".pdf,.docx,.txt" class="hidden" />
+          <div class="flex flex-col items-center gap-3">
+            <UploadCloud class="w-8 h-8 text-slate-400 group-hover:text-brand transition-colors" />
+            <span v-if="isAnalyzing" class="text-sm font-medium text-slate-600 dark:text-slate-300">Analiz ediliyor...</span>
+            <span v-else class="text-sm font-medium text-slate-600 dark:text-slate-300">Marka kimliği dosyası yükle (PDF, DOCX, TXT)</span>
           </div>
-          <p class="input-hint">Yapay zeka aşağıdaki alanları otomatik dolduracaktır.</p>
+          <p class="text-xs text-slate-500 mt-2">Yapay zeka aşağıdaki alanları otomatik dolduracaktır.</p>
         </div>
 
-        <div class="form-grid">
-          <div class="input-group">
-            <label class="input-label">Marka Adı</label>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div class="space-y-1.5">
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Marka Adı</label>
             <input type="text" v-model="brand.brand_name" placeholder="Markanızın adı" class="input" />
           </div>
 
-          <div class="input-group">
-            <label class="input-label">Marka Tonu</label>
+          <div class="space-y-1.5">
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Marka Tonu</label>
             <select v-model="brand.tone" class="input">
               <option value="Profesyonel">Profesyonel</option>
               <option value="Samimi">Samimi</option>
@@ -76,34 +77,34 @@
             </select>
           </div>
 
-          <div class="input-group full-width">
-            <label class="input-label">Hedef Kitle</label>
-            <textarea v-model="brand.target_audience" rows="2" placeholder="Örn: Genç profesyoneller, yazılımcılar, B2B şirketleri..." class="input"></textarea>
+          <div class="space-y-1.5 md:col-span-2">
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Hedef Kitle</label>
+            <textarea v-model="brand.target_audience" rows="2" placeholder="Örn: Genç profesyoneller, yazılımcılar, B2B şirketleri..." class="input resize-y"></textarea>
           </div>
 
-          <div class="input-group full-width">
-            <label class="input-label">Anahtar Kelimeler</label>
+          <div class="space-y-1.5 md:col-span-2">
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Anahtar Kelimeler</label>
             <input type="text" v-model="keywordsString" placeholder="teknoloji, yazılım, inovasyon (virgülle ayırın)" class="input" />
           </div>
         </div>
 
-        <button class="btn btn-primary" @click="saveBrand" :disabled="aiStore.isLoading">
-          {{ aiStore.isLoading ? 'Kaydediliyor...' : 'Marka Profilini Kaydet' }}
+        <button class="btn btn-primary w-full md:w-auto" @click="saveBrand" :disabled="aiStore.isLoading">
+          <Loader2 v-if="aiStore.isLoading" class="w-4 h-4 animate-spin" />
+          <span v-else>Marka Profilini Kaydet</span>
         </button>
-      </div>
-    </section>
+      </section>
 
-    <!-- Publish Settings Section -->
-    <section class="card settings-card animate-fade-in-up delay-200">
-      <div class="card-header">
-        <h2 class="card-title">Paylaşım ve Boyut Ayarları</h2>
-      </div>
-      <div class="card-body">
-        <p class="settings-desc">Her platform için varsayılan görsel boyutlandırma (en-boy) oranlarını belirleyin. Görselleriniz yayınlanırken otomatik olarak bulanık arka plan (blur padding) ile bu oranlara uyarlanacaktır.</p>
+      <!-- Publish Settings Section -->
+      <section class="card p-6">
+        <div class="flex items-center gap-2 mb-6">
+          <Image as="Image" class="w-5 h-5 text-brand" />
+          <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Paylaşım ve Boyut Ayarları</h2>
+        </div>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Her platform için varsayılan görsel boyutlandırma (en-boy) oranlarını belirleyin. Görselleriniz yayınlanırken otomatik olarak bulanık arka plan (blur padding) ile bu oranlara uyarlanacaktır.</p>
 
-        <div class="form-grid">
-          <div class="input-group">
-            <label class="input-label">Instagram En-Boy Oranı</label>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div class="space-y-1.5">
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Instagram En-Boy Oranı</label>
             <select v-model="publishSettings.instagram_aspect_ratio" class="input">
               <option value="1:1">Kare (1:1)</option>
               <option value="4:5">Dikey (4:5) - Önerilen</option>
@@ -111,8 +112,8 @@
             </select>
           </div>
 
-          <div class="input-group">
-            <label class="input-label">Facebook En-Boy Oranı</label>
+          <div class="space-y-1.5">
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Facebook En-Boy Oranı</label>
             <select v-model="publishSettings.facebook_aspect_ratio" class="input">
               <option value="1:1">Kare (1:1)</option>
               <option value="4:5">Dikey (4:5)</option>
@@ -120,8 +121,8 @@
             </select>
           </div>
 
-          <div class="input-group">
-            <label class="input-label">LinkedIn En-Boy Oranı</label>
+          <div class="space-y-1.5">
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300">LinkedIn En-Boy Oranı</label>
             <select v-model="publishSettings.linkedin_aspect_ratio" class="input">
               <option value="1:1">Kare (1:1)</option>
               <option value="4:5">Dikey (4:5)</option>
@@ -129,8 +130,8 @@
             </select>
           </div>
 
-          <div class="input-group">
-            <label class="input-label">X (Twitter) En-Boy Oranı</label>
+          <div class="space-y-1.5">
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300">X (Twitter) En-Boy Oranı</label>
             <select v-model="publishSettings.twitter_aspect_ratio" class="input">
               <option value="1:1">Kare (1:1)</option>
               <option value="16:9">Geniş Ekran (16:9) - Önerilen</option>
@@ -139,20 +140,47 @@
           </div>
         </div>
 
-        <button class="btn btn-primary" @click="savePublishSettings" :disabled="publishStore.isLoading">
-          {{ publishStore.isLoading ? 'Kaydediliyor...' : 'Paylaşım Ayarlarını Kaydet' }}
+        <button class="btn btn-primary w-full md:w-auto" @click="savePublishSettings" :disabled="publishStore.isLoading">
+          <Loader2 v-if="publishStore.isLoading" class="w-4 h-4 animate-spin" />
+          <span v-else>Paylaşım Ayarlarını Kaydet</span>
         </button>
-      </div>
-    </section>
+      </section>
+    </div>
 
     <!-- Notifications -->
-    <div v-if="successMessage" class="notification notification-success animate-fade-in-up">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-      {{ successMessage }}
-    </div>
-    <div v-if="aiStore.error" class="notification notification-error animate-fade-in-up">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-      {{ aiStore.error }}
+    <div class="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+      <transition 
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="transform translate-y-2 opacity-0"
+        enter-to-class="transform translate-y-0 opacity-100"
+        leave-active-class="transition duration-200 ease-in"
+        leave-from-class="transform translate-y-0 opacity-100"
+        leave-to-class="transform translate-y-2 opacity-0"
+      >
+        <div v-if="successMessage" class="flex items-center gap-3 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-4 py-3 rounded-xl shadow-lg">
+          <CheckCircle2 class="w-5 h-5" />
+          <span class="text-sm font-medium">{{ successMessage }}</span>
+        </div>
+      </transition>
+      
+      <transition 
+        enter-active-class="transition duration-200 ease-out"
+        enter-from-class="opacity-0 translate-y-2"
+        enter-to-class="opacity-100 translate-y-0"
+        leave-active-class="transition duration-150 ease-in"
+        leave-from-class="opacity-100 translate-y-0"
+        leave-to-class="opacity-0 translate-y-2"
+      >
+        <div v-if="aiStore.error" class="flex items-center justify-between gap-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 px-4 py-3 rounded-xl shadow-lg">
+          <div class="flex items-center gap-3">
+            <AlertCircle class="w-5 h-5 shrink-0" />
+            <span class="text-sm font-medium">{{ aiStore.error }}</span>
+          </div>
+          <button @click="aiStore.clearError()" class="p-1 hover:bg-red-100 dark:hover:bg-red-500/20 rounded-lg transition-colors">
+            <X class="w-4 h-4" />
+          </button>
+        </div>
+      </transition>
     </div>
 
   </div>
@@ -162,6 +190,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useAiStore } from '../stores/ai'
 import { usePublishSettingsStore } from '../stores/publishSettings'
+import { Cpu, Palette, UploadCloud, Image, Loader2, CheckCircle2, AlertCircle, X } from 'lucide-vue-next'
 
 const aiStore = useAiStore()
 const publishStore = usePublishSettingsStore()
@@ -274,90 +303,3 @@ const handleFileUpload = async (event) => {
   }
 }
 </script>
-
-<style scoped>
-.settings-card {
-  margin-bottom: var(--space-6);
-}
-
-.settings-desc {
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
-  margin-bottom: var(--space-6);
-}
-
-/* Form Grid */
-.form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-4);
-  margin-bottom: var(--space-6);
-}
-
-.full-width {
-  grid-column: 1 / -1;
-}
-
-/* File Upload */
-.file-upload-area {
-  border: 2px dashed var(--border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-6);
-  text-align: center;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  margin-bottom: var(--space-6);
-}
-
-.file-upload-area:hover {
-  border-color: var(--accent);
-  background: var(--accent-light);
-}
-
-.file-upload-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-3);
-  color: var(--text-secondary);
-  font-size: var(--font-size-sm);
-}
-
-.file-upload-content svg {
-  color: var(--text-tertiary);
-}
-
-.file-input-hidden {
-  display: none;
-}
-
-/* Notifications */
-.notification {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
-  margin-top: var(--space-4);
-}
-
-.notification-success {
-  background: var(--success-bg);
-  border: 1px solid var(--success-border);
-  color: var(--success);
-}
-
-.notification-error {
-  background: var(--error-bg);
-  border: 1px solid var(--error-border);
-  color: var(--error);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
-}
-</style>

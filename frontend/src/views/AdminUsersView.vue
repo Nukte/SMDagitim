@@ -1,62 +1,79 @@
 <template>
-  <div class="admin-users-view">
-    <div class="page-header">
-      <h1 class="page-title">Kullanıcı Yönetimi</h1>
-      <p class="page-subtitle">Sisteme kayıtlı tüm kullanıcıları ve yöneticileri görüntüleyin.</p>
+  <div class="max-w-6xl mx-auto p-4 md:p-8 animate-fade-in">
+    <div class="mb-8">
+      <h1 class="text-3xl font-display font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Kullanıcı Yönetimi</h1>
+      <p class="text-slate-500 dark:text-slate-400">Sisteme kayıtlı tüm kullanıcıları ve yöneticileri görüntüleyin.</p>
     </div>
 
-    <div class="card">
-      <div v-if="loading" class="loading-state">
-        <div class="skeleton-table">
-          <div class="skeleton-row header"></div>
-          <div class="skeleton-row" v-for="i in 5" :key="i"></div>
+    <div class="card overflow-hidden">
+      <div v-if="loading" class="p-8">
+        <div class="animate-pulse flex space-x-4">
+          <div class="flex-1 space-y-4 py-1">
+            <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4"></div>
+            <div class="space-y-2">
+              <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded"></div>
+              <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-5/6"></div>
+              <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-4/6"></div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div v-else-if="error" class="empty-state">
-        <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-        <h3 class="empty-state-title">Hata Oluştu</h3>
-        <p class="empty-state-text">{{ error }}</p>
-        <button class="btn btn-primary mt-4" @click="fetchUsers">Tekrar Dene</button>
+      <div v-else-if="error" class="p-12 text-center">
+        <div class="w-16 h-16 bg-red-100 dark:bg-red-500/20 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <AlertCircle class="w-8 h-8" />
+        </div>
+        <h3 class="text-lg font-medium text-slate-900 dark:text-white mb-2">Hata Oluştu</h3>
+        <p class="text-slate-500 dark:text-slate-400 mb-6">{{ error }}</p>
+        <button class="btn btn-primary" @click="fetchUsers">Tekrar Dene</button>
       </div>
 
-      <div v-else class="table-responsive animate-fade-in-up">
-        <table class="users-table">
-          <thead>
+      <div v-else class="overflow-x-auto">
+        <table class="w-full text-left text-sm whitespace-nowrap">
+          <thead class="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200 dark:border-slate-800">
             <tr>
-              <th>ID</th>
-              <th>E-posta</th>
-              <th>Durum</th>
-              <th>Rol</th>
-              <th>İşlemler</th>
+              <th class="px-6 py-4">ID</th>
+              <th class="px-6 py-4">E-posta</th>
+              <th class="px-6 py-4">Durum</th>
+              <th class="px-6 py-4">Rol</th>
+              <th class="px-6 py-4 text-right">İşlemler</th>
             </tr>
           </thead>
-          <tbody>
-            <tr v-for="user in users" :key="user.id">
-              <td>#{{ user.id }}</td>
-              <td>{{ user.email }}</td>
-              <td>
-                <span :class="['badge', user.is_active ? 'badge-success' : 'badge-error']">
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+            <tr v-for="user in users" :key="user.id" class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+              <td class="px-6 py-4 font-medium text-slate-900 dark:text-white">#{{ user.id }}</td>
+              <td class="px-6 py-4 text-slate-600 dark:text-slate-300">{{ user.email }}</td>
+              <td class="px-6 py-4">
+                <span :class="[
+                  'px-2.5 py-1 rounded-full text-xs font-medium border',
+                  user.is_active 
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' 
+                    : 'bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20'
+                ]">
                   {{ user.is_active ? 'Aktif' : 'Pasif' }}
                 </span>
               </td>
-              <td>
-                <span :class="['badge', user.is_superuser ? 'badge-primary' : 'badge-neutral']">
+              <td class="px-6 py-4">
+                <span :class="[
+                  'px-2.5 py-1 rounded-full text-xs font-medium border',
+                  user.is_superuser 
+                    ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-500/20' 
+                    : 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
+                ]">
                   {{ user.is_superuser ? 'Admin' : 'Kullanıcı' }}
                 </span>
               </td>
-              <td>
-                <div class="action-buttons">
-                  <button 
-                    v-if="user.email !== authStore.email"
-                    class="btn btn-sm"
-                    :class="user.is_active ? 'btn-danger' : 'btn-success'"
-                    @click="toggleActive(user)"
-                    :disabled="savingId === user.id"
-                  >
-                    {{ user.is_active ? 'Pasife Al' : 'Aktifleştir' }}
-                  </button>
-                </div>
+              <td class="px-6 py-4 text-right">
+                <button 
+                  v-if="user.email !== authStore.email"
+                  class="btn btn-sm"
+                  :class="user.is_active ? 'btn-danger' : 'btn-secondary'"
+                  @click="toggleActive(user)"
+                  :disabled="savingId === user.id"
+                >
+                  <Loader2 v-if="savingId === user.id" class="w-4 h-4 animate-spin" />
+                  <span v-else>{{ user.is_active ? 'Pasife Al' : 'Aktifleştir' }}</span>
+                </button>
               </td>
             </tr>
           </tbody>
@@ -82,6 +99,7 @@ import api from '../api/client'
 import { useAuthStore } from '../stores/auth'
 import { toast } from '../utils/toast'
 import ConfirmModal from '../components/ConfirmModal.vue'
+import { AlertCircle, Loader2 } from 'lucide-vue-next'
 
 const users = ref([])
 const loading = ref(true)
@@ -160,88 +178,3 @@ onMounted(() => {
   fetchUsers()
 })
 </script>
-
-<style scoped>
-.admin-users-view {
-  padding-bottom: var(--space-8);
-}
-
-.table-responsive {
-  overflow-x: auto;
-}
-
-.users-table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-}
-
-.users-table th,
-.users-table td {
-  padding: var(--space-4);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.users-table th {
-  font-weight: 500;
-  color: var(--text-secondary);
-  background-color: var(--bg-secondary);
-}
-
-.users-table tr {
-  transition: background-color var(--transition-fast);
-}
-
-.users-table tr:hover {
-  background-color: var(--bg-hover);
-}
-
-.users-table tr:last-child td {
-  border-bottom: none;
-}
-
-.badge {
-  display: inline-block;
-  padding: 0.25rem 0.5rem;
-  border-radius: var(--radius-sm);
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.badge-success { background: rgba(16, 185, 129, 0.1); color: #10b981; }
-.badge-error { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
-.badge-primary { background: rgba(99, 102, 241, 0.1); color: #6366f1; }
-.badge-neutral { background: var(--bg-secondary); color: var(--text-secondary); }
-
-.action-buttons {
-  display: flex;
-  gap: var(--space-2);
-}
-
-.btn-sm {
-  padding: 0.25rem 0.75rem;
-  font-size: 0.875rem;
-}
-
-.btn-danger {
-  background: transparent;
-  color: #ef4444;
-  border: 1px solid #ef4444;
-}
-
-.btn-danger:hover {
-  background: #ef4444;
-  color: white;
-}
-
-.btn-success {
-  background: transparent;
-  color: #10b981;
-  border: 1px solid #10b981;
-}
-
-.btn-success:hover {
-  background: #10b981;
-  color: white;
-}
-</style>

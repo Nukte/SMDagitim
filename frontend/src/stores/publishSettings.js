@@ -10,19 +10,33 @@ export const usePublishSettingsStore = defineStore('publishSettings', {
       twitter_aspect_ratio: '16:9'
     },
     isLoading: false,
-    error: null
+    error: null,
+    errorTimeout: null
   }),
 
   actions: {
+    setError(msg) {
+      this.error = msg
+      if (this.errorTimeout) clearTimeout(this.errorTimeout)
+      if (msg) {
+        this.errorTimeout = setTimeout(() => {
+          this.error = null
+        }, 4000)
+      }
+    },
+    clearError() {
+      this.error = null
+      if (this.errorTimeout) clearTimeout(this.errorTimeout)
+    },
     async fetchSettings() {
       this.isLoading = true
-      this.error = null
+      this.clearError()
       try {
         const response = await api.get('/api/publish/settings')
         this.settings = response.data
       } catch (error) {
         console.error('Publish settings alınamadı:', error)
-        this.error = 'Ayarlar alınamadı.'
+        this.setError('Ayarlar alınamadı.')
       } finally {
         this.isLoading = false
       }
@@ -30,14 +44,14 @@ export const usePublishSettingsStore = defineStore('publishSettings', {
 
     async saveSettings(settings) {
       this.isLoading = true
-      this.error = null
+      this.clearError()
       try {
         const response = await api.post('/api/publish/settings', settings)
         this.settings = response.data
         return true
       } catch (error) {
         console.error('Publish settings kaydedilemedi:', error)
-        this.error = error.response?.data?.detail || 'Ayarlar kaydedilirken hata oluştu.'
+        this.setError(error.response?.data?.detail || 'Ayarlar kaydedilirken hata oluştu.')
         return false
       } finally {
         this.isLoading = false

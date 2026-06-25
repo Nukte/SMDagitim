@@ -186,7 +186,7 @@ async def analyze_brand_file(file_content: bytes, filename: str, ai_settings: Di
     - "keywords": Markayı veya içeriği anlatan 5-10 adet anahtar kelime (liste formatında)
 
     Döküman Metni:
-    {text[:8000]}  # İlk 8000 karakteri analiz et (Token limiti için)
+    {text[:8000]} 
 
     Yanıtını sadece JSON olarak ver:
     {{

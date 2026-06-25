@@ -1,100 +1,93 @@
 <template>
-  <div class="admin-settings-view">
-    <div class="page-header animate-fade-in-up">
-      <h1 class="page-title">Genel Ayarlar</h1>
-      <p class="page-subtitle">Uygulamanın genel çalışma kurallarını ve varsayılan ayarlarını yapılandırın.</p>
+  <div class="max-w-4xl mx-auto p-4 md:p-8 animate-fade-in">
+    <div class="mb-8">
+      <h1 class="text-3xl font-display font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Genel Ayarlar</h1>
+      <p class="text-slate-500 dark:text-slate-400">Uygulamanın genel çalışma kurallarını ve varsayılan ayarlarını yapılandırın.</p>
     </div>
 
-    <div v-if="loading" class="loading-state">
-      <div class="spinner spinner-lg"></div>
-      <p class="text-tertiary mt-4">Ayarlar yükleniyor...</p>
+    <div v-if="loading" class="flex flex-col items-center justify-center p-12">
+      <Loader2 class="w-8 h-8 animate-spin text-brand" />
+      <p class="text-slate-500 dark:text-slate-400 mt-4">Ayarlar yükleniyor...</p>
     </div>
     
-    <div v-else class="settings-grid animate-fade-in-up delay-100">
+    <div v-else class="space-y-6">
       <!-- Sistem Ayarları -->
-      <div class="card settings-card">
-        <div class="card-header">
-          <h2 class="card-title">Sistem Ayarları</h2>
-        </div>
-        <div class="card-body">
-          <div class="toggle-row">
-            <div class="toggle-info">
-              <h3 class="toggle-title">Yeni Kullanıcı Kaydı</h3>
-              <p class="toggle-desc">Dışarıdan yeni üye kayıtlarını açıp kapatın. Kapalı olduğunda kayıt sayfası gizlenir.</p>
-            </div>
-            <label class="premium-toggle">
-              <input type="checkbox" v-model="settings.registration_enabled" @change="saveSettings">
-              <div class="toggle-track">
-                <div class="toggle-thumb"></div>
-              </div>
-            </label>
+      <div class="card p-6">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-6">Sistem Ayarları</h2>
+        
+        <div class="flex items-center justify-between py-4 border-t border-slate-100 dark:border-slate-800">
+          <div>
+            <h3 class="font-medium text-slate-900 dark:text-white">Yeni Kullanıcı Kaydı</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Dışarıdan yeni üye kayıtlarını açıp kapatın. Kapalı olduğunda kayıt sayfası gizlenir.</p>
           </div>
+          
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" v-model="settings.registration_enabled" @change="saveSettings" class="sr-only peer">
+            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-brand"></div>
+          </label>
         </div>
       </div>
 
       <!-- Genel Yapay Zeka Ayarları -->
-      <div class="card settings-card delay-200">
-        <div class="card-header">
-          <h2 class="card-title">Genel Yapay Zeka (AI) Fallback Ayarları</h2>
-        </div>
-        <div class="card-body">
-          <p class="section-desc">
-            Kullanıcı kendi yapay zeka anahtarını girmediğinde sistemin genel olarak kullanacağı yedek (fallback) API ayarlarıdır.
-          </p>
+      <div class="card p-6">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">Genel Yapay Zeka (AI) Fallback Ayarları</h2>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">
+          Kullanıcı kendi yapay zeka anahtarını girmediğinde sistemin genel olarak kullanacağı yedek (fallback) API ayarlarıdır.
+        </p>
 
-          <form @submit.prevent="saveSettings" class="settings-form">
-            <div class="input-group">
-              <label class="input-label">Yapay Zeka Sağlayıcısı</label>
-              <div class="input-wrapper">
-                <select v-model="settings.global_ai_provider" class="input">
-                  <option value="gemini">Google Gemini</option>
-                  <option value="openai">OpenAI (ChatGPT)</option>
-                  <option value="anthropic">Anthropic (Claude)</option>
-                </select>
-              </div>
-            </div>
+        <form @submit.prevent="saveSettings" class="space-y-5">
+          <div class="space-y-1.5">
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Yapay Zeka Sağlayıcısı</label>
+            <select v-model="settings.global_ai_provider" class="input">
+              <option value="gemini">Google Gemini</option>
+              <option value="openai">OpenAI (ChatGPT)</option>
+              <option value="anthropic">Anthropic (Claude)</option>
+            </select>
+          </div>
 
-            <div class="input-group">
-              <label class="input-label">Model Adı</label>
-              <div class="input-wrapper">
-                <input 
-                  type="text" 
-                  v-model="settings.global_ai_model" 
-                  class="input"
-                  placeholder="Örn: gemini-2.5-flash veya gpt-4o"
-                >
-              </div>
-            </div>
+          <div class="space-y-1.5">
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Model Adı</label>
+            <input 
+              type="text" 
+              v-model="settings.global_ai_model" 
+              class="input"
+              placeholder="Örn: gemini-2.5-flash veya gpt-4o"
+            >
+          </div>
 
-            <div class="input-group">
-              <label class="input-label">API Anahtarı</label>
-              <div class="input-wrapper">
-                <input 
-                  type="password" 
-                  v-model="settings.global_ai_api_key" 
-                  class="input"
-                  placeholder="Yalnızca değiştirmek isterseniz girin"
-                >
-              </div>
-              <span class="input-hint text-success mt-1" v-if="settings.global_ai_api_key">
-                ✓ Mevcut bir anahtar kayıtlı.
+          <div class="space-y-1.5">
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300">API Anahtarı</label>
+            <input 
+              type="password" 
+              v-model="settings.global_ai_api_key" 
+              class="input"
+              placeholder="Yalnızca değiştirmek isterseniz girin"
+            >
+            <p v-if="settings.global_ai_api_key" class="text-xs text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
+              <CheckCircle2 class="w-3 h-3" /> Mevcut bir anahtar kayıtlı.
+            </p>
+          </div>
+
+          <div class="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-4">
+            <button type="submit" class="btn btn-primary" :disabled="saving">
+              <Loader2 v-if="saving" class="w-4 h-4 animate-spin" />
+              <span v-else>Değişiklikleri Kaydet</span>
+            </button>
+            <transition 
+              enter-active-class="transition duration-300 ease-out"
+              enter-from-class="transform -translate-x-2 opacity-0"
+              enter-to-class="transform translate-x-0 opacity-100"
+              leave-active-class="transition duration-200 ease-in"
+              leave-from-class="transform translate-x-0 opacity-100"
+              leave-to-class="transform -translate-x-2 opacity-0"
+            >
+              <span v-if="successMessage" class="text-sm font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                <CheckCircle2 class="w-4 h-4" />
+                {{ successMessage }}
               </span>
-            </div>
-
-            <div class="form-actions mt-6">
-              <button type="submit" class="btn btn-primary" :disabled="saving">
-                <span v-if="saving" class="spinner spinner-sm"></span>
-                <span v-else>Değişiklikleri Kaydet</span>
-              </button>
-              <transition name="fade">
-                <span v-if="successMessage" class="success-message">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                  {{ successMessage }}
-                </span>
-              </transition>
-            </div>
-          </form>
-        </div>
+            </transition>
+          </div>
+        </form>
       </div>
     </div>
   </div>
@@ -104,6 +97,7 @@
 import { ref, onMounted } from 'vue'
 import api from '../api/client'
 import { toast } from '../utils/toast'
+import { Loader2, CheckCircle2 } from 'lucide-vue-next'
 
 const settings = ref({
   registration_enabled: true,
@@ -155,137 +149,3 @@ onMounted(() => {
   fetchSettings()
 })
 </script>
-
-<style scoped>
-.admin-settings-view {
-  max-width: 800px;
-  margin: 0 auto;
-  padding-bottom: var(--space-12);
-}
-
-.settings-grid {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
-}
-
-.settings-card {
-  overflow: hidden;
-}
-
-.section-desc {
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
-  margin-bottom: var(--space-6);
-  line-height: 1.6;
-}
-
-.settings-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-}
-
-.mt-1 { margin-top: var(--space-1); }
-.mt-4 { margin-top: var(--space-4); }
-.mt-6 { margin-top: var(--space-6); }
-
-/* Premium Toggle */
-.toggle-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-2) 0;
-}
-
-.toggle-title {
-  font-size: var(--font-size-base);
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: var(--space-1);
-}
-
-.toggle-desc {
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
-  line-height: 1.5;
-}
-
-.premium-toggle {
-  position: relative;
-  display: inline-block;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.premium-toggle input {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.toggle-track {
-  width: 44px;
-  height: 24px;
-  background-color: var(--border);
-  border-radius: 999px;
-  position: relative;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
-}
-
-.toggle-thumb {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 20px;
-  height: 20px;
-  background-color: white;
-  border-radius: 50%;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-}
-
-.premium-toggle input:checked + .toggle-track {
-  background-color: var(--accent);
-}
-
-.premium-toggle input:checked + .toggle-track .toggle-thumb {
-  transform: translateX(20px);
-}
-
-.premium-toggle:active .toggle-thumb {
-  width: 24px;
-}
-.premium-toggle input:checked:active + .toggle-track .toggle-thumb {
-  transform: translateX(16px);
-}
-
-.form-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-}
-
-.success-message {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  color: var(--success);
-  font-size: var(--font-size-sm);
-  font-weight: 500;
-  background: var(--success-bg);
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-md);
-}
-
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 0.3s, transform 0.3s;
-}
-.fade-enter-from, .fade-leave-to {
-  opacity: 0;
-  transform: translateY(4px);
-}
-</style>
