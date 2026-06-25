@@ -1,5 +1,9 @@
 import os
 import json
+import base64
+import hashlib
+import secrets
+from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
@@ -9,7 +13,8 @@ from database import get_db
 from models.db_models import User, OAuthToken
 from routers.auth import get_current_user
 from services.canva_mcp import CanvaMCPService
-from services.ai import generate_content_with_ai
+from services.ai import translate_content
+from models.db_models import User, OAuthToken, AISettings
 
 router = APIRouter(prefix="/api/canva", tags=["canva"])
 
@@ -32,29 +37,50 @@ async def get_canva_status(current_user: User = Depends(get_current_user), db: S
 
 @router.get("/auth/login")
 async def canva_login(current_user: User = Depends(get_current_user)):
-    """Canva OAuth akışını başlatır."""
+    """Canva OAuth akışını başlatır (PKCE Desteği ile)."""
+    # Proje kök dizinindeki .env dosyasını yükle
+    load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
+    
     client_id = os.environ.get("CANVA_CLIENT_ID")
     if not client_id:
-        raise HTTPException(status_code=500, detail="CANVA_CLIENT_ID ayarlanmamış.")
+        raise HTTPException(status_code=500, detail="CANVA_CLIENT_ID bulunamadı. Lütfen .env dosyasını kontrol edin.")
         
     redirect_uri = f"{os.environ.get('BACKEND_URL', 'http://localhost:8000')}/api/canva/auth/callback"
-    state = str(current_user.id)  # Basit bir state mekanizması
+    
+    # PKCE code_verifier ve code_challenge üretimi
+    code_verifier = secrets.token_urlsafe(64)
+    code_challenge = base64.urlsafe_b64encode(
+        hashlib.sha256(code_verifier.encode("ascii")).digest()
+    ).decode("ascii").rstrip("=")
+    
+    # Güvenlik için state (normalde verifier ile eşleştirilip DB'de veya Cache'de tutulmalı)
+    # Şimdilik kullanıcı id'si ve verifier'ı basitçe şifreli veya encode edilmiş bir state'te tutalım.
+    state_payload = f"{current_user.id}:{code_verifier}"
+    state = base64.urlsafe_b64encode(state_payload.encode()).decode()
     
     # Canva Connect API Authorization URL
     auth_url = (
         f"https://www.canva.com/api/oauth/authorize?"
-        f"client_id={client_id}&"
+        f"code_challenge_method=s256&"
         f"response_type=code&"
+        f"client_id={client_id}&"
         f"redirect_uri={redirect_uri}&"
         f"state={state}&"
+        f"code_challenge={code_challenge}&"
         f"scope=design:read design:write"
     )
     return {"url": auth_url}
 
 @router.get("/auth/callback")
 async def canva_callback(code: str, state: str, db: Session = Depends(get_db)):
-    """Canva OAuth dönüşünü işler ve token kaydeder."""
-    user_id = int(state)
+    """Canva OAuth dönüşünü işler ve PKCE token takasını yapar."""
+    try:
+        decoded_state = base64.urlsafe_b64decode(state).decode()
+        user_id_str, code_verifier = decoded_state.split(":")
+        user_id = int(user_id_str)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Geçersiz state parametresi.")
+        
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
@@ -101,9 +127,22 @@ async def translate_canva_design(
         
     # AI çeviri adaptörü (Mevcut AI servisimizi kullanır)
     async def translate_func(text: str, target_lang: str) -> str:
-        prompt = f"Şu metni Canva tasarımı için en iyi, kısa ve profesyonel şekilde {target_lang} diline çevir:\n\n{text}\n\nSadece çeviriyi ver."
-        result = await generate_content_with_ai(prompt, user_id=current_user.id, db=db)
-        return result.get("content", text)
+        ai_settings_record = db.query(AISettings).filter(AISettings.user_id == current_user.id).first()
+        ai_settings = {}
+        if ai_settings_record:
+            ai_settings = {
+                "provider": ai_settings_record.provider,
+                "model_name": ai_settings_record.model_name,
+                "api_key": ai_settings_record.api_key
+            }
+            
+        translated_text, _ = await translate_content(
+            content=text, 
+            hashtags=[], 
+            target_language=target_lang, 
+            ai_settings=ai_settings
+        )
+        return translated_text
 
     try:
         # MCP Servisini başlat
