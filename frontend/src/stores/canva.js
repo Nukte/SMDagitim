@@ -26,7 +26,7 @@ export const useCanvaStore = defineStore('canva', {
         const res = await api.get('/api/canva/auth/login')
         window.location.href = res.data.url
       } catch (err) {
-        this.error = 'Bağlantı başlatılamadı'
+        this.error = err.response?.data?.detail || 'Bağlantı başlatılamadı'
         console.error(err)
       }
     },
