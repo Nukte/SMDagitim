@@ -15,10 +15,24 @@ export const useAiStore = defineStore('ai', {
       keywords: []
     },
     isLoading: false,
-    error: null
+    error: null,
+    errorTimeout: null
   }),
 
   actions: {
+    setError(msg) {
+      this.error = msg
+      if (this.errorTimeout) clearTimeout(this.errorTimeout)
+      if (msg) {
+        this.errorTimeout = setTimeout(() => {
+          this.error = null
+        }, 4000)
+      }
+    },
+    clearError() {
+      this.error = null
+      if (this.errorTimeout) clearTimeout(this.errorTimeout)
+    },
     async fetchSettings() {
       try {
         const response = await api.get('/api/ai/settings')
@@ -35,7 +49,7 @@ export const useAiStore = defineStore('ai', {
         return true
       } catch (error) {
         console.error('AI ayarları kaydedilemedi:', error)
-        this.error = error.response?.data?.detail || 'Ayarlar kaydedilirken hata oluştu.'
+        this.setError(error.response?.data?.detail || 'Ayarlar kaydedilirken hata oluştu.')
         return false
       }
     },
@@ -56,14 +70,14 @@ export const useAiStore = defineStore('ai', {
         return true
       } catch (error) {
         console.error('Marka profili kaydedilemedi:', error)
-        this.error = error.response?.data?.detail || 'Marka profili kaydedilirken hata oluştu.'
+        this.setError(error.response?.data?.detail || 'Marka profili kaydedilirken hata oluştu.')
         return false
       }
     },
 
     async generateContent(topic, generateImage = true) {
       this.isLoading = true
-      this.error = null
+      this.clearError()
       try {
         const response = await api.post('/api/ai/generate', {
           topic,
@@ -72,7 +86,7 @@ export const useAiStore = defineStore('ai', {
         return response.data
       } catch (error) {
         console.error('İçerik üretilemedi:', error)
-        this.error = error.response?.data?.detail || 'İçerik üretilirken hata oluştu.'
+        this.setError(error.response?.data?.detail || 'İçerik üretilirken hata oluştu.')
         throw error
       } finally {
         this.isLoading = false
@@ -81,7 +95,7 @@ export const useAiStore = defineStore('ai', {
 
     async analyzeBrandFile(file) {
       this.isLoading = true
-      this.error = null
+      this.clearError()
       try {
         const formData = new FormData()
         formData.append('file', file)
@@ -94,7 +108,7 @@ export const useAiStore = defineStore('ai', {
         return response.data
       } catch (error) {
         console.error('Dosya analiz edilemedi:', error)
-        this.error = error.response?.data?.detail || 'Dosya analiz edilirken hata oluştu.'
+        this.setError(error.response?.data?.detail || 'Dosya analiz edilirken hata oluştu.')
         throw error
       } finally {
         this.isLoading = false

@@ -13,7 +13,7 @@ import sys
 from config import get_settings
 from database import engine, SessionLocal
 from models import db_models
-from routers import auth, upload, publish, oauth, ai, admin
+from routers import auth, upload, publish, oauth, ai, admin, canva
 from routers.auth import get_password_hash
 from services.storage import initialize_bucket
 
@@ -100,6 +100,7 @@ cors_origins = [settings.FRONTEND_URL]
 if settings.DEBUG:
     cors_origins.extend([
         "http://localhost:5173",
+        "http://localhost:5174",
         "http://localhost:3000",
     ])
 
@@ -118,6 +119,7 @@ app.include_router(publish.router)
 app.include_router(oauth.router)
 app.include_router(ai.router)
 app.include_router(admin.router)
+app.include_router(canva.router)
 
 
 @app.get("/", tags=["Health"])

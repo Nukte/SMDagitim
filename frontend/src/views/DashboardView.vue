@@ -1,109 +1,118 @@
 <template>
-  <div class="page-container">
-
+  <div class="max-w-6xl mx-auto p-4 md:p-8 animate-fade-in">
     <!-- Page Header -->
-    <div class="page-header dash-header">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
       <div>
-        <h1 class="page-title">Dashboard</h1>
-        <p class="page-subtitle">Hesaplarını bağla, içeriklerini çeviri desteğiyle dünyayla paylaş.</p>
+        <h1 class="text-3xl font-display font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Dashboard</h1>
+        <p class="text-slate-500 dark:text-slate-400">Hesaplarınızı bağlayın, içeriklerinizi dünyayla paylaşın.</p>
       </div>
-      <router-link to="/create" class="btn btn-primary btn-lg">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+      <router-link to="/create" class="btn btn-primary shadow-lg shadow-brand/20">
+        <PenSquare class="w-5 h-5" />
         Yeni Gönderi
       </router-link>
     </div>
 
     <!-- Stats -->
-    <div class="stats-row animate-fade-in-up">
-      <div class="stat-card card">
-        <p class="stat-label">Bağlı Hesap</p>
-        <p class="stat-value">{{ postStore.connectedAccounts.length }}</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+      <div class="card p-6 border-l-4 border-l-brand flex flex-col justify-center">
+        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Bağlı Hesap</p>
+        <p class="text-4xl font-display font-bold text-slate-900 dark:text-white">{{ postStore.connectedAccounts.length }}</p>
       </div>
     </div>
 
     <!-- Connected Accounts -->
-    <section class="section animate-fade-in-up delay-100">
-      <h2 class="section-label">Bağlı Hesaplar</h2>
-
-      <div v-if="postStore.connectedAccounts.length === 0" class="empty-state">
-        <div class="empty-state-icon">🔗</div>
-        <p class="empty-state-title">Henüz hesap bağlanmadı</p>
-        <p class="empty-state-text">Aşağıdan sosyal medya hesaplarını bağlayarak başla.</p>
+    <section class="mb-12">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Bağlı Hesaplar</h2>
       </div>
 
-      <div class="account-grid">
+      <div v-if="postStore.connectedAccounts.length === 0" class="glass-panel rounded-2xl p-12 text-center border border-dashed border-slate-300 dark:border-slate-700">
+        <div class="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-3xl mx-auto mb-4">🔗</div>
+        <h3 class="text-lg font-medium text-slate-900 dark:text-white mb-2">Henüz hesap bağlanmadı</h3>
+        <p class="text-slate-500 dark:text-slate-400">Aşağıdan sosyal medya hesaplarınızı bağlayarak başlayabilirsiniz.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div
           v-for="account in postStore.connectedAccounts"
           :key="account.account_id"
-          class="account-card card"
+          class="card group overflow-hidden"
         >
           <!-- Platform accent bar -->
-          <div class="account-accent" :style="{ background: getPlatform(account.platform)?.color }"></div>
+          <div class="h-1.5 w-full" :style="{ background: getPlatform(account.platform)?.color }"></div>
 
-          <div class="account-body">
-            <div class="account-header">
-              <div class="account-icon" :style="{ background: getPlatform(account.platform)?.bgColor }">
-                <span>{{ getPlatform(account.platform)?.icon }}</span>
+          <div class="p-6">
+            <div class="flex items-start justify-between mb-6">
+              <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-sm" :style="{ background: getPlatform(account.platform)?.bgColor }">
+                  <span>{{ getPlatform(account.platform)?.icon }}</span>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-slate-900 dark:text-white truncate max-w-[140px]">{{ account.account_name || 'İsimsiz Hesap' }}</h3>
+                  <p class="text-xs text-slate-500 mt-1">{{ getPlatform(account.platform)?.name }}</p>
+                </div>
               </div>
-              <div class="account-info">
-                <h3 class="account-name">{{ account.account_name || 'İsimsiz Hesap' }}</h3>
-                <p class="account-platform">{{ getPlatform(account.platform)?.name }}</p>
+              <div class="px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 flex items-center gap-1.5">
+                <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse"></div>
+                <span class="text-xs font-medium text-emerald-700 dark:text-emerald-400">Bağlı</span>
               </div>
-              <span class="badge badge-success">
-                <span class="status-dot dot-success"></span>
-                Bağlı
-              </span>
             </div>
 
             <!-- Account Settings -->
-            <div class="account-settings">
-              <div class="setting-row">
-                <label>Ülke</label>
+            <div class="pt-5 border-t border-slate-100 dark:border-slate-800 space-y-4 mb-6">
+              <div class="space-y-1.5">
+                <label class="text-xs font-medium text-slate-500">Ülke</label>
                 <input
                   type="text"
                   v-model="account.country"
                   placeholder="Örn: Türkiye"
-                  class="input"
+                  class="input py-2 text-sm"
                   @blur="updateAccount(account)"
                 />
               </div>
-              <div class="setting-row">
-                <label>Hedef Çeviri Dili</label>
+              <div class="space-y-1.5">
+                <label class="text-xs font-medium text-slate-500">Hedef Çeviri Dili</label>
                 <input
                   type="text"
                   v-model="account.target_language"
                   placeholder="Örn: İngilizce"
-                  class="input"
+                  class="input py-2 text-sm"
                   @blur="updateAccount(account)"
                 />
-                <span class="input-hint">Dil girilirse paylaşım anında otomatik çeviri yapılır.</span>
+                <p class="text-[11px] text-slate-400">Dil girilirse paylaşım anında otomatik çeviri yapılır.</p>
               </div>
             </div>
 
-            <div class="account-footer">
-              <button class="btn btn-danger btn-sm" @click="disconnectAccount(account.account_id)">
-                Bağlantıyı Kes
-              </button>
-            </div>
+            <button class="btn btn-danger w-full py-2.5 text-sm" @click="disconnectAccount(account.account_id)">
+              <Unlink class="w-4 h-4" />
+              Bağlantıyı Kes
+            </button>
           </div>
         </div>
       </div>
     </section>
 
     <!-- Add Account -->
-    <section class="section animate-fade-in-up delay-200">
-      <h2 class="section-label">Yeni Hesap Ekle</h2>
-      <div class="connect-buttons">
+    <section>
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Yeni Hesap Ekle</h2>
+      </div>
+      
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <button
           v-for="p in postStore.platforms"
           :key="p.id"
-          class="connect-btn"
-          :class="{ disabled: p.id === 'twitter' }"
+          class="card flex flex-col items-center justify-center p-6 gap-3 hover:border-brand hover:bg-brand/5 dark:hover:bg-brand/10 transition-all duration-300 group"
+          :class="{ 'opacity-50 grayscale cursor-not-allowed hover:border-slate-200 hover:bg-white dark:hover:bg-slate-900': p.id === 'twitter' }"
           :disabled="p.id === 'twitter'"
           @click="connectPlatform(p.id)"
         >
-          <span class="connect-icon">{{ p.icon }}</span>
-          <span>{{ p.id === 'twitter' ? 'Yakında' : p.name + ' Bağla' }}</span>
+          <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl transition-transform group-hover:scale-110 group-active:scale-95" :style="{ background: getPlatform(p.id)?.bgColor }">
+            {{ p.icon }}
+          </div>
+          <span class="font-medium text-sm text-slate-700 dark:text-slate-300">
+            {{ p.id === 'twitter' ? 'Yakında' : p.name + ' Bağla' }}
+          </span>
         </button>
       </div>
     </section>
@@ -117,6 +126,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { usePostStore } from '../stores/post'
 import api from '../api/client'
+import { PenSquare, Unlink } from 'lucide-vue-next'
 
 const router    = useRouter()
 const route     = useRoute()
@@ -158,11 +168,6 @@ async function disconnectAccount(accountId) {
   }
 }
 
-function handleLogout() {
-  authStore.logout()
-  router.push('/login')
-}
-
 onMounted(async () => {
   await postStore.fetchPlatformStatus()
   if (route.query.auth_success) {
@@ -171,193 +176,3 @@ onMounted(async () => {
   }
 })
 </script>
-
-<style scoped>
-/* Page Header */
-.dash-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-4);
-}
-
-/* Stats */
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: var(--space-4);
-  margin-bottom: var(--space-8);
-}
-
-.stat-card {
-  padding: var(--space-5) var(--space-6);
-}
-
-.stat-label {
-  font-size: var(--font-size-xs);
-  font-weight: 600;
-  color: var(--text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: var(--space-2);
-}
-
-.stat-value {
-  font-size: var(--font-size-3xl);
-  font-weight: 700;
-  color: var(--accent);
-  letter-spacing: -0.02em;
-}
-
-/* Section */
-.section {
-  margin-bottom: var(--space-8);
-}
-
-/* Account Grid */
-.account-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: var(--space-4);
-}
-
-.account-card {
-  overflow: hidden;
-  position: relative;
-}
-
-.account-card:hover {
-  box-shadow: var(--shadow-md);
-}
-
-.account-accent {
-  height: 3px;
-}
-
-.account-body {
-  padding: var(--space-5);
-}
-
-.account-header {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  margin-bottom: var(--space-5);
-}
-
-.account-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.25rem;
-  flex-shrink: 0;
-}
-
-.account-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.account-name {
-  font-size: var(--font-size-md);
-  font-weight: 600;
-  color: var(--text-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.account-platform {
-  font-size: var(--font-size-xs);
-  color: var(--text-tertiary);
-  margin-top: 2px;
-}
-
-/* Account Settings */
-.account-settings {
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  margin-bottom: var(--space-4);
-}
-
-.setting-row {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.setting-row label {
-  font-size: var(--font-size-xs);
-  font-weight: 500;
-  color: var(--text-secondary);
-}
-
-.setting-row .input {
-  padding: var(--space-2) var(--space-3);
-  font-size: var(--font-size-sm);
-}
-
-.account-footer {
-  padding-top: var(--space-3);
-}
-
-.account-footer .btn {
-  width: 100%;
-  justify-content: center;
-}
-
-/* Connect Buttons */
-.connect-buttons {
-  display: flex;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-}
-
-.connect-btn {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-5);
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  font-family: var(--font-sans);
-  font-size: var(--font-size-base);
-  font-weight: 500;
-  color: var(--text-primary);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.connect-btn:hover:not(:disabled) {
-  border-color: var(--accent);
-  background: var(--accent-light);
-  color: var(--accent);
-}
-
-.connect-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.connect-icon {
-  font-size: 1.25rem;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .dash-header {
-    flex-direction: column;
-  }
-
-  .account-grid {
-    grid-template-columns: 1fr;
-  }
-}
-</style>

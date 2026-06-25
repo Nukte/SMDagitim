@@ -1,62 +1,90 @@
 <template>
-  <div class="page-container">
-    <div class="create-header">
+  <div class="max-w-7xl mx-auto p-4 md:p-8 animate-fade-in">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
       <div>
-        <h1 class="page-title">Gönderi Oluştur</h1>
-        <p class="page-subtitle">İçeriğini hazırla, önizle ve paylaş.</p>
+        <h1 class="text-3xl font-display font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Gönderi Oluştur</h1>
+        <p class="text-slate-500 dark:text-slate-400">İçeriğinizi hazırlayın, önizleyin ve tüm platformlarda tek tıkla paylaşın.</p>
       </div>
-      <button class="btn btn-secondary" @click="showAIModal = true">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"/></svg>
-        AI ile Üret
-      </button>
+      <div class="flex gap-3">
+        <button class="btn bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:from-blue-600 hover:to-cyan-600 border-0 shadow-lg shadow-blue-500/25" @click="showCanvaModal = true">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>
+          Canva Çeviri
+        </button>
+        <button class="btn bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:from-indigo-600 hover:to-purple-600 border-0 shadow-lg shadow-indigo-500/25" @click="showAIModal = true">
+          <Sparkles class="w-5 h-5" />
+          AI ile Üret
+        </button>
+      </div>
     </div>
 
-    <div class="create-layout">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
       <!-- Left Column — Editor -->
-      <div class="editor-col animate-fade-in-up">
-        <MediaUploader />
-        <PostEditor />
-        <PlatformSelector />
+      <div class="lg:col-span-7 flex flex-col gap-6">
+        <div class="card p-6 shadow-sm">
+          <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-4 uppercase tracking-wide">1. Medya Yükle</h3>
+          <MediaUploader />
+        </div>
+        
+        <div class="card p-6 shadow-sm relative overflow-hidden">
+          <!-- decorative blur -->
+          <div class="absolute -top-10 -right-10 w-32 h-32 bg-brand/5 rounded-full blur-2xl pointer-events-none"></div>
+          <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-4 uppercase tracking-wide">2. İçerik</h3>
+          <PostEditor />
+        </div>
+        
+        <div class="card p-6 shadow-sm">
+          <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-4 uppercase tracking-wide">3. Hedef Platformlar</h3>
+          <PlatformSelector />
+        </div>
 
         <button
-          class="btn btn-primary btn-lg publish-btn"
+          class="btn btn-primary w-full py-4 text-lg mt-4 shadow-lg shadow-brand/20 rounded-2xl"
           :disabled="!canPublish || postStore.isPublishing"
           @click="handlePublish"
         >
-          <span v-if="postStore.isPublishing" class="spinner spinner-sm"></span>
+          <Loader2 v-if="postStore.isPublishing" class="w-6 h-6 animate-spin" />
           <template v-else>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+            <Send class="w-5 h-5" />
             Şimdi Paylaş
           </template>
         </button>
       </div>
 
       <!-- Right Column — Preview -->
-      <div class="preview-col animate-fade-in-up delay-200">
-        <div class="preview-panel card">
-          <div class="preview-header">
-            <h3 class="preview-title">Ön İzleme</h3>
+      <div class="lg:col-span-5 lg:sticky lg:top-24 mt-8 lg:mt-0">
+        <div class="card overflow-hidden border-slate-200/60 dark:border-slate-800/60 shadow-xl shadow-slate-200/50 dark:shadow-none">
+          <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-sm">
+            <h3 class="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+              <Eye class="w-4 h-4 text-slate-400" />
+              Canlı Ön İzleme
+            </h3>
           </div>
 
           <!-- Tab selector -->
-          <div class="preview-tabs">
+          <div class="flex overflow-x-auto border-b border-slate-100 dark:border-slate-800 scrollbar-hide">
             <button
               v-for="tab in previewTabs"
               :key="tab.id"
-              class="preview-tab"
-              :class="{ active: activePreview === tab.id }"
+              class="flex-1 min-w-[100px] flex items-center justify-center gap-2 py-3 px-4 text-sm font-medium transition-all relative"
+              :class="activePreview === tab.id ? 'text-brand' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50'"
               @click="activePreview = tab.id"
             >
-              <span class="tab-icon">{{ tab.icon }}</span>
-              <span>{{ tab.name }}</span>
+              <span class="text-lg">{{ tab.icon }}</span>
+              <span class="hidden sm:inline">{{ tab.name }}</span>
+              <!-- Active Indicator -->
+              <div v-if="activePreview === tab.id" class="absolute bottom-0 left-0 right-0 h-0.5 bg-brand rounded-t-full"></div>
             </button>
           </div>
 
-          <div class="preview-pane">
-            <InstagramPreview v-if="activePreview === 'instagram'" />
-            <FacebookPreview  v-if="activePreview === 'facebook'" />
-            <TwitterPreview   v-if="activePreview === 'twitter'" />
-            <LinkedInPreview  v-if="activePreview === 'linkedin'" />
+          <!-- Preview Area -->
+          <div class="p-6 min-h-[500px] bg-slate-50/50 dark:bg-slate-950/50 flex items-center justify-center">
+            <div class="w-full max-w-[380px] bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden transform transition-all duration-300 hover:shadow-md">
+              <InstagramPreview v-if="activePreview === 'instagram'" />
+              <FacebookPreview  v-if="activePreview === 'facebook'" />
+              <TwitterPreview   v-if="activePreview === 'twitter'" />
+              <LinkedInPreview  v-if="activePreview === 'linkedin'" />
+            </div>
           </div>
         </div>
       </div>
@@ -64,6 +92,7 @@
 
     <PublishStatusModal v-if="showStatusModal" @close="closeModal" />
     <AIAssistantModal v-if="showAIModal" :show="showAIModal" @close="showAIModal = false" @generated="handleAIGenerated" />
+    <CanvaTranslatorModal v-if="showCanvaModal" :show="showCanvaModal" @close="showCanvaModal = false" @translated="handleCanvaTranslated" />
   </div>
 </template>
 
@@ -81,6 +110,8 @@ import TwitterPreview   from '../components/previews/TwitterPreview.vue'
 import LinkedInPreview  from '../components/previews/LinkedInPreview.vue'
 import PublishStatusModal from '../components/PublishStatusModal.vue'
 import AIAssistantModal from '../components/AIAssistantModal.vue'
+import CanvaTranslatorModal from '../components/CanvaTranslatorModal.vue'
+import { Sparkles, Send, Eye, Loader2 } from 'lucide-vue-next'
 
 const router    = useRouter()
 const authStore = useAuthStore()
@@ -89,6 +120,7 @@ const postStore = usePostStore()
 const activePreview  = ref('instagram')
 const showStatusModal = ref(false)
 const showAIModal = ref(false)
+const showCanvaModal = ref(false)
 
 const previewTabs = [
   { id: 'instagram', name: 'Instagram', icon: '📸', color: '#E1306C' },
@@ -134,123 +166,18 @@ function handleAIGenerated(result) {
   }
 }
 
-function handleLogout() {
-  authStore.logout()
-  router.push('/login')
+function handleCanvaTranslated(result) {
+  // Canva'dan dönen yeni linki içeriğe ekleyebiliriz
+  postStore.content += `\n\n🌍 Çevrilen Tasarım Linki:\n${result.translated_url}`
 }
 </script>
 
 <style scoped>
-.create-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-4);
-  margin-bottom: var(--space-8);
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
 }
-
-.create-layout {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-8);
-  align-items: start;
-}
-
-/* Editor Column */
-.editor-col {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.publish-btn {
-  width: 100%;
-  padding: var(--space-4);
-  font-size: var(--font-size-md);
-  border-radius: var(--radius-lg);
-  gap: var(--space-2);
-  margin-top: var(--space-2);
-}
-
-/* Preview Column */
-.preview-col {
-  position: sticky;
-  top: var(--space-8);
-}
-
-.preview-panel {
-  overflow: hidden;
-}
-
-.preview-header {
-  padding: var(--space-4) var(--space-5);
-  border-bottom: 1px solid var(--border);
-}
-
-.preview-title {
-  font-size: var(--font-size-md);
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.preview-tabs {
-  display: flex;
-  border-bottom: 1px solid var(--border);
-}
-
-.preview-tab {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  padding: var(--space-3);
-  font-family: var(--font-sans);
-  font-size: var(--font-size-xs);
-  font-weight: 500;
-  color: var(--text-tertiary);
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  white-space: nowrap;
-}
-
-.preview-tab:hover {
-  color: var(--text-primary);
-  background: var(--bg-body);
-}
-
-.preview-tab.active {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
-  background: var(--bg-body);
-}
-
-.tab-icon {
-  font-size: var(--font-size-sm);
-}
-
-.preview-pane {
-  padding: var(--space-5);
-  min-height: 400px;
-  background: var(--bg-body);
-}
-
-/* Responsive */
-@media (max-width: 1024px) {
-  .create-layout {
-    grid-template-columns: 1fr;
-  }
-  .preview-col {
-    position: static;
-  }
-}
-
-@media (max-width: 768px) {
-  .create-header {
-    flex-direction: column;
-  }
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
 </style>

@@ -1,38 +1,50 @@
 <template>
-  <div class="platform-selector card">
-    <h3 class="selector-title">📱 Hesaplar</h3>
-
-    <div v-if="postStore.connectedAccounts.length === 0" style="font-size: 0.8rem; color: var(--text-tertiary);">
+  <div>
+    <div v-if="postStore.connectedAccounts.length === 0" class="text-sm text-slate-500 dark:text-slate-400 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
       Hesap bulunamadı. Lütfen önce dashboard'dan hesap bağlayın.
     </div>
 
-    <div class="platform-list">
+    <div class="space-y-3">
       <label
         v-for="account in postStore.connectedAccounts"
         :key="account.account_id"
-        class="platform-option"
-        :class="{
-          'option-selected': postStore.selectedAccounts.includes(account.account_id)
-        }"
-        :style="{ '--p-color': getPlatform(account.platform)?.color }"
+        class="flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all duration-200 select-none group"
+        :class="[
+          postStore.selectedAccounts.includes(account.account_id) 
+            ? 'border-brand bg-brand/5 dark:bg-brand/10 shadow-sm shadow-brand/10' 
+            : 'border-slate-200 dark:border-slate-700 hover:border-brand/50 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+        ]"
       >
         <input
           type="checkbox"
           :value="account.account_id"
           v-model="postStore.selectedAccounts"
-          hidden
+          class="hidden"
         />
-        <div class="option-check">
-          <span v-if="postStore.selectedAccounts.includes(account.account_id)">✓</span>
+        
+        <!-- Checkbox Indicator -->
+        <div 
+          class="w-6 h-6 rounded-md border flex items-center justify-center transition-colors duration-200 shrink-0"
+          :class="postStore.selectedAccounts.includes(account.account_id) ? 'bg-brand border-brand text-white' : 'border-slate-300 dark:border-slate-600 text-transparent'"
+        >
+          <Check class="w-4 h-4" />
         </div>
-        <span class="option-icon">{{ getPlatform(account.platform)?.icon }}</span>
-        <span class="option-name">
-           {{ getPlatform(account.platform)?.name }}
-           <small style="display:block; font-size: 0.7rem; color: var(--text-tertiary); font-weight: normal;">
-             {{ account.account_name || 'İsimsiz' }}
-             <span v-if="account.target_language">({{ account.target_language }})</span>
-           </small>
-        </span>
+        
+        <!-- Icon -->
+        <div class="text-xl" :style="{ color: getPlatform(account.platform)?.color }">
+          {{ getPlatform(account.platform)?.icon }}
+        </div>
+        
+        <!-- Details -->
+        <div class="flex-1">
+          <div class="font-medium text-slate-900 dark:text-white text-sm">
+            {{ getPlatform(account.platform)?.name }}
+          </div>
+          <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1">
+            <span class="truncate max-w-[120px]">{{ account.account_name || 'İsimsiz' }}</span>
+            <span v-if="account.target_language" class="px-1.5 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700 text-[10px] uppercase font-bold">{{ account.target_language }}</span>
+          </div>
+        </div>
       </label>
     </div>
   </div>
@@ -40,6 +52,7 @@
 
 <script setup>
 import { usePostStore } from '../stores/post'
+import { Check } from 'lucide-vue-next'
 
 const postStore = usePostStore()
 
@@ -47,74 +60,3 @@ function getPlatform(platformId) {
   return postStore.platforms.find(p => p.id === platformId)
 }
 </script>
-
-<style scoped>
-.platform-selector {
-  padding: var(--space-5);
-}
-
-.selector-title {
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: var(--text-secondary);
-  margin-bottom: var(--space-4);
-}
-
-.platform-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.platform-option {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  user-select: none;
-}
-
-.platform-option:hover {
-  border-color: var(--border-hover);
-  background: var(--bg-card-hover);
-}
-
-.option-selected {
-  border-color: var(--p-color) !important;
-  background: var(--bg-card-hover);
-}
-
-.option-check {
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--border);
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 700;
-  transition: all var(--transition-fast);
-  flex-shrink: 0;
-}
-
-.option-selected .option-check {
-  background: var(--p-color);
-  border-color: var(--p-color);
-  color: white;
-}
-
-.option-icon {
-  font-size: 1.1rem;
-}
-
-.option-name {
-  font-size: var(--font-size-sm);
-  font-weight: 500;
-  flex: 1;
-}
-</style>

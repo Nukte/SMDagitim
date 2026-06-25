@@ -12,7 +12,7 @@ from models.schemas import (
 )
 from routers.auth import get_current_user
 from database import SessionLocal, get_db
-from models.db_models import OAuthToken, AISettings, User, PublishSettings
+from models.db_models import OAuthToken, AISettings, User, PublishSettings, PostHistory
 from sqlalchemy.orm import Session
 from services.platforms.instagram import InstagramPublisher
 from services.platforms.facebook import FacebookPublisher
@@ -168,12 +168,54 @@ async def publish_to_single_account(
                 p.post_id = result.get("post_id")
                 p.post_url = result.get("post_url")
 
+        # Başarılı kaydı PostHistory'e yaz
+        try:
+            import json
+            db_log = SessionLocal()
+            try:
+                history = PostHistory(
+                    user_id=user_id,
+                    job_id=f"{job_id}_{account_id}",
+                    content=request.content,
+                    hashtags=json.dumps(request.hashtags),
+                    media_keys=json.dumps([m.object_key for m in request.media]),
+                    account_ids=json.dumps([account_id]),
+                    status="completed"
+                )
+                db_log.add(history)
+                db_log.commit()
+            finally:
+                db_log.close()
+        except Exception as log_err:
+            logger.warning(f"[{account_id}] PostHistory kaydı yazılamadı: {log_err}")
+
     except Exception as e:
         logger.error(f"[{account_id}] Paylaşım hatası: {e}")
         for p in job_statuses.get(job_id, []):
             if p.account_id == account_id:
                 p.status = "error"
                 p.error_message = str(e)
+
+        # Hata kaydını PostHistory'e yaz
+        try:
+            import json
+            db_log = SessionLocal()
+            try:
+                history = PostHistory(
+                    user_id=user_id,
+                    job_id=f"{job_id}_{account_id}",
+                    content=request.content,
+                    hashtags=json.dumps(request.hashtags),
+                    media_keys=json.dumps([m.object_key for m in request.media]),
+                    account_ids=json.dumps([account_id]),
+                    status="failed"
+                )
+                db_log.add(history)
+                db_log.commit()
+            finally:
+                db_log.close()
+        except Exception as log_err:
+            logger.warning(f"[{account_id}] PostHistory kaydı yazılamadı: {log_err}")
 
 
 @router.post("", response_model=PublishResponse)

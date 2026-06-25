@@ -18,10 +18,10 @@ export const usePostStore = defineStore('post', () => {
 
   // Platform bilgileri
   const platforms = [
-    { id: 'instagram', name: 'Instagram', icon: '📸', color: '#E1306C', maxChars: 2200 },
-    { id: 'facebook', name: 'Facebook', icon: '📘', color: '#1877F2', maxChars: 63206 },
-    { id: 'twitter', name: 'X / Twitter', icon: '𝕏', color: '#000000', maxChars: 280 },
-    { id: 'linkedin', name: 'LinkedIn', icon: '💼', color: '#0A66C2', maxChars: 3000 }
+    { id: 'instagram', name: 'Instagram', icon: '📸', color: '#E1306C', bgColor: '#fce7f3', maxChars: 2200 },
+    { id: 'facebook',  name: 'Facebook',  icon: '📘', color: '#1877F2', bgColor: '#dbeafe', maxChars: 63206 },
+    { id: 'twitter',   name: 'X / Twitter', icon: '𝕏', color: '#000000', bgColor: '#f1f5f9', maxChars: 280 },
+    { id: 'linkedin',  name: 'LinkedIn',  icon: '💼', color: '#0A66C2', bgColor: '#e0f2fe', maxChars: 3000 }
   ]
 
   const currentMinChars = computed(() => {
@@ -35,13 +35,14 @@ export const usePostStore = defineStore('post', () => {
     return Math.min(...selected.map(p => p.maxChars), 63206)
   })
 
-  // Platform bağlantı durumlarını getir
+  // Platform bağlantı durumlarını getir (gerçek API)
   async function fetchPlatformStatus() {
     try {
       const response = await api.get('/api/oauth/status')
-      connectedAccounts.value = response.data.accounts || []
+      connectedAccounts.value = response.data.accounts
     } catch (error) {
-      console.error('Bağlı hesaplar alınamadı:', error)
+      console.error('Platform bağlantı durumları alınamadı:', error)
+      connectedAccounts.value = []
     }
   }
 
