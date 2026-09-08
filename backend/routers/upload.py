@@ -16,6 +16,10 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/upload", tags=["Upload"])
 
+# Presigned upload akışıyla tutarlı üst sınır (services/storage.py generate_presigned_post)
+MAX_DIRECT_UPLOAD_SIZE = 500 * 1024 * 1024  # 500MB
+
+
 @router.post("/direct", response_model=UploadConfirmResponse)
 async def upload_direct(
     file: UploadFile = File(...),
@@ -28,13 +32,19 @@ async def upload_direct(
     try:
         content_type = file.content_type
         media_type = "video" if content_type and content_type.startswith("video/") else "image"
-        
+
         # Dosya uzantısını al
         ext = os.path.splitext(file.filename)[1] if file.filename else ".jpg"
-        
+
         # Dosyayı oku
         file_bytes = await file.read()
-        
+
+        if len(file_bytes) > MAX_DIRECT_UPLOAD_SIZE:
+            raise HTTPException(
+                status_code=413,
+                detail=f"Dosya boyutu {MAX_DIRECT_UPLOAD_SIZE // (1024*1024)}MB'dan büyük olamaz.",
+            )
+
         # Storage servisini kullanarak yükle
         public_url, object_key = upload_file_to_storage(file_bytes, content_type or "application/octet-stream", ext)
         
@@ -43,6 +53,8 @@ async def upload_direct(
             public_url=public_url,
             media_type=media_type,
         )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Doğrudan yükleme hatası: {e}")
         raise HTTPException(
