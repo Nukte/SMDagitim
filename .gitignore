@@ -93,5 +93,6 @@ tasks.md
 walkthrough.md
 implementation.md
 implementation_plan.md
-PROJECT_ANALYSIS.md
-AGENTS.md
+
+# Local-only docs (AGENTS.md, analiz raporları vb.) — repoya/GitHub'a girmez
+.local/
