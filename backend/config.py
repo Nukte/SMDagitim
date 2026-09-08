@@ -69,3 +69,35 @@ class Settings(BaseSettings):
 @lru_cache()
 def get_settings() -> Settings:
     return Settings()
+
+
+_INSECURE_DEFAULTS = {
+    "JWT_SECRET": "dev-secret-key-change-in-production",
+    "ADMIN_PASSWORD": "secret123",
+    "ENCRYPTION_KEY": "vwrmltfHFdrRSdD28O9KTBg_QKQaKG_lxnVERsIO__Y=",
+}
+
+
+def validate_production_secrets(settings: "Settings") -> None:
+    """
+    DEBUG=False (üretim) iken güvensiz/varsayılan gizli anahtarlarla
+    ayağa kalkmayı engeller (fail-fast). DEBUG=True iken (yerel geliştirme)
+    hiçbir kontrol yapmaz — dev deneyimini bozmaz.
+    """
+    if settings.DEBUG:
+        return
+
+    problems = []
+    for field_name, insecure_value in _INSECURE_DEFAULTS.items():
+        if getattr(settings, field_name) == insecure_value:
+            problems.append(
+                f"{field_name} varsayılan (güvensiz) değerde bırakılmış. Üretim ortamında mutlaka değiştirin."
+            )
+    if not settings.ENCRYPTION_KEY:
+        problems.append("ENCRYPTION_KEY tanımlı değil.")
+
+    if problems:
+        raise RuntimeError(
+            "Güvenli olmayan üretim konfigürasyonu tespit edildi, başlatma durduruldu:\n- "
+            + "\n- ".join(problems)
+        )

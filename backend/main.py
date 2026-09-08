@@ -10,7 +10,7 @@ import logging
 import traceback
 import sys
 
-from config import get_settings
+from config import get_settings, validate_production_secrets
 from database import engine, SessionLocal
 from models import db_models
 from routers import auth, upload, publish, oauth, ai, admin, canva
@@ -30,6 +30,10 @@ async def lifespan(app: FastAPI):
     """Uygulama yaşam döngüsü — başlangıç ve kapanış."""
     # Startup
     logger.info("🚀 Uygulama başlatılıyor...")
+
+    # Güvenlik: üretimde varsayılan/güvensiz gizli anahtarlarla başlatmayı engelle (fail-fast).
+    validate_production_secrets(get_settings())
+
     db_models.Base.metadata.create_all(bind=engine)
     logger.info("📦 Veritabanı tabloları oluşturuldu.")
 
@@ -137,11 +141,16 @@ async def global_exception_handler(request: Request, exc: Exception):
     """
     Uygulama genelindeki yakalanmayan tüm hataları (exception) yakalar.
     Hatanın tam olarak hangi dosyada ve satırda meydana geldiğini tespit edip loglar.
+
+    ÖNEMLİ: Hata detayları (mesaj, dosya yolu, satır no, exception tipi) YALNIZCA
+    sunucu loglarına yazılır. İstemciye asla dahili bilgi (stack trace, dosya
+    yolu, exception mesajı) döndürülmez — aksi halde her 500 hatası saldırgana
+    kod yapısı hakkında bilgi sızdıran bir "hata oracle"ına dönüşür.
     """
     # Hatanın traceback (iz sürme) detaylarını al
     exc_type, exc_value, exc_traceback = sys.exc_info()
     tb = traceback.extract_tb(exc_traceback)
-    
+
     # Hataya neden olan en son konumu bul
     if tb:
         last_trace = tb[-1]
@@ -152,7 +161,7 @@ async def global_exception_handler(request: Request, exc: Exception):
     else:
         error_location = "Bilinmeyen Konum"
 
-    # Loglara detaylı şekilde yaz
+    # Loglara detaylı şekilde yaz (sadece sunucu tarafında)
     logger.error("="*50)
     logger.error(f"🚨 YAKALANMAYAN HATA: {request.method} {request.url}")
     logger.error(f"📍 KONUM: {error_location}")
@@ -162,13 +171,8 @@ async def global_exception_handler(request: Request, exc: Exception):
         logger.error(f"  {line}")
     logger.error("="*50)
 
-    # İstemciye (frontend vb.) hatanın nerede olduğunu gösteren bir yanıt dön
+    # İstemciye sadece jenerik bir mesaj dön — dahili detay sızdırılmaz.
     return JSONResponse(
         status_code=500,
-        content={
-            "detail": "Sunucu içinde beklenmeyen bir hata oluştu.",
-            "error_message": str(exc),
-            "error_location": error_location,
-            "error_type": type(exc).__name__
-        }
+        content={"detail": "Sunucu içinde beklenmeyen bir hata oluştu."},
     )
