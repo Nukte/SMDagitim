@@ -50,6 +50,10 @@ class Settings(BaseSettings):
     LINKEDIN_CLIENT_ID: str = ""
     LINKEDIN_CLIENT_SECRET: str = ""
 
+    # ── Canva ──
+    CANVA_CLIENT_ID: str = ""
+    CANVA_CLIENT_SECRET: str = ""
+
     # ── URL'ler ──
     FRONTEND_URL: str = "http://localhost:5173"
     BACKEND_URL: str = "http://localhost:8000"

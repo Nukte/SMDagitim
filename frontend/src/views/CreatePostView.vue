@@ -112,10 +112,39 @@ import PublishStatusModal from '../components/PublishStatusModal.vue'
 import AIAssistantModal from '../components/AIAssistantModal.vue'
 import CanvaTranslatorModal from '../components/CanvaTranslatorModal.vue'
 import { Sparkles, Send, Eye, Loader2 } from 'lucide-vue-next'
+import { toast } from '../utils/toast'
 
 const router    = useRouter()
 const authStore = useAuthStore()
 const postStore = usePostStore()
+
+const CANVA_ERROR_MESSAGES = {
+  invalid_state: 'Canva bağlantı isteği geçersiz (CSRF koruması). Lütfen tekrar deneyin.',
+  expired_state: 'Canva bağlantı isteğinin süresi doldu. Lütfen tekrar deneyin.',
+  token_exchange_failed: 'Canva ile bağlantı kurulamadı. Lütfen tekrar deneyin.',
+  network_error: 'Canva sunucusuna ulaşılamadı. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.',
+}
+
+function handleCanvaRedirectParams() {
+  const params = new URLSearchParams(window.location.search)
+  const success = params.get('canva_auth_success')
+  const error = params.get('canva_auth_error')
+
+  if (success) {
+    toast.success('Canva hesabınız başarıyla bağlandı.')
+  } else if (error) {
+    toast.error(CANVA_ERROR_MESSAGES[error] || 'Canva bağlantısı başarısız oldu.')
+  }
+
+  if (success || error) {
+    params.delete('canva_auth_success')
+    params.delete('canva_auth_error')
+    const query = params.toString()
+    router.replace({ path: '/create', query: query ? Object.fromEntries(params) : {} })
+  }
+}
+
+handleCanvaRedirectParams()
 
 const activePreview  = ref('instagram')
 const showStatusModal = ref(false)
