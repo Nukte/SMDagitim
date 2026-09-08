@@ -21,6 +21,15 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_HOURS: int = 24
 
+    # ── Şifreleme (OAuth token / AI API key) ──
+    # DEV-ONLY varsayılan Fernet anahtarı. Üretimde ENCRYPTION_KEY env değişkeni
+    # ZORUNLUDUR — aksi halde uygulama başlamayı reddeder (bkz. config.validate_production_secrets).
+    # Yeni bir anahtar üretmek için:
+    #   python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+    ENCRYPTION_KEY: str = Field(
+        "vwrmltfHFdrRSdD28O9KTBg_QKQaKG_lxnVERsIO__Y=", env="ENCRYPTION_KEY"
+    )
+
     # ── MinIO ──
     MINIO_ENDPOINT: str = "http://localhost:9000"
     MINIO_ACCESS_KEY: str = Field("admin", env="MINIO_ACCESS_KEY")

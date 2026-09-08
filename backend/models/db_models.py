@@ -5,6 +5,7 @@ from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, Bool
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from database import Base
+from models.encrypted_types import EncryptedText
 
 class User(Base):
     """Kayıtlı müşterileri (tenant) saklar."""
@@ -35,8 +36,8 @@ class OAuthToken(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     platform = Column(String(50), index=True)
-    access_token = Column(Text, nullable=False)
-    refresh_token = Column(Text, nullable=True)
+    access_token = Column(EncryptedText, nullable=False)  # Fernet ile şifreli saklanır (services/crypto.py)
+    refresh_token = Column(EncryptedText, nullable=True)  # Fernet ile şifreli saklanır (services/crypto.py)
     expires_at = Column(Integer, nullable=True)
     account_id = Column(String(255), nullable=True)
     account_name = Column(String(255), nullable=True)
@@ -73,7 +74,7 @@ class AISettings(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     provider = Column(String(50), default="gemini")  # gemini, openai, anthropic vb.
     model_name = Column(String(100), default="gemini-2.5-flash") # gemini-1.5-pro, gpt-4o vb.
-    api_key = Column(Text, nullable=True) # Şifreli veya düz metin
+    api_key = Column(EncryptedText, nullable=True)  # Fernet ile şifreli saklanır (services/crypto.py)
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     user = relationship("User", back_populates="ai_settings")
@@ -102,7 +103,7 @@ class AppSettings(Base):
     registration_enabled = Column(Boolean, default=True)
     global_ai_provider = Column(String(50), default="gemini")
     global_ai_model = Column(String(100), default="gemini-2.5-flash")
-    global_ai_api_key = Column(Text, nullable=True)
+    global_ai_api_key = Column(EncryptedText, nullable=True)  # Fernet ile şifreli saklanır (services/crypto.py)
 
 
 class PublishSettings(Base):
