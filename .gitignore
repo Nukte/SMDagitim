@@ -22,6 +22,7 @@ share/python-wheels/
 *.egg
 MANIFEST
 .venv/
+.venv*/
 venv/
 env/
 .env/
@@ -92,3 +93,5 @@ tasks.md
 walkthrough.md
 implementation.md
 implementation_plan.md
+PROJECT_ANALYSIS.md
+AGENTS.md
